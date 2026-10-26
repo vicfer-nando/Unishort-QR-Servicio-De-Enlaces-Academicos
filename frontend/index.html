@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="UniShort QR, servicio académico para acortar enlaces de la Universidad Nacional de Loja.">
+    <meta name="theme-color" content="#0e3d2a">
+    <title>UniShort QR | Universidad Nacional de Loja</title>
+    <style>
+        :root {
+            --unl-red: #a6192e;
+            --unl-red-dark: #7f1323;
+            --unl-green: #14543a;
+            --unl-green-deep: #0e3d2a;
+            --unl-green-soft: #e8f0ea;
+            --ink: #1f2a24;
+            --muted: #5b665f;
+            --paper: #f4f1e9;
+            --card: #fffdf9;
+            --border: #d7ddd5;
+            --border-strong: #b9c4b9;
+            --success: #1f6b45;
+            --success-bg: #edf6f0;
+            --error: #a6192e;
+            --error-bg: #fbf0f1;
+            --shadow: 0 18px 45px rgba(14, 61, 42, 0.1);
+            --radius: 6px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 12% 0%, rgba(20, 84, 58, 0.08), transparent 34rem),
+                linear-gradient(180deg, var(--paper) 0%, #eef2ec 100%);
+            color: var(--ink);
+            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1,
+        h2,
+        .brand-institution {
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 16px;
+            z-index: 100;
+            padding: 10px 16px;
+            background: var(--card);
+            color: var(--unl-green-deep);
+            border: 2px solid var(--unl-red);
+            border-radius: var(--radius);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .skip-link:focus {
+            top: 12px;
+        }
+
+        .site-header {
+            background: var(--unl-green-deep);
+            border-top: 4px solid var(--unl-red);
+            color: #ffffff;
+        }
+
+        .header-inner {
+            width: min(1120px, 100%);
+            margin: 0 auto;
+            padding: 18px clamp(18px, 4vw, 40px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .brand-institution {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            letter-spacing: 0.02em;
+            line-height: 1.25;
+        }
+
+        .brand-meta {
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 0.78rem;
+            letter-spacing: 0.14em;
+            text-align: right;
+            text-transform: uppercase;
+        }
+
+        .page-shell {
+            width: min(1120px, 100%);
+            margin: 0 auto;
+            padding: clamp(34px, 6vw, 72px) clamp(18px, 4vw, 40px) clamp(28px, 4vw, 48px);
+            flex: 1;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+            gap: clamp(32px, 6vw, 72px);
+            align-items: start;
+        }
+
+        .intro {
+            padding-top: clamp(6px, 2vw, 22px);
+        }
+
+        .kicker {
+            color: var(--unl-red);
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .intro h1 {
+            color: var(--unl-green-deep);
+            font-size: clamp(3.2rem, 7vw, 5.4rem);
+            font-weight: 700;
+            letter-spacing: -0.045em;
+            line-height: 0.94;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            color: var(--ink);
+            font-size: clamp(1.08rem, 2vw, 1.32rem);
+            line-height: 1.5;
+            max-width: 34ch;
+        }
+
+        .intro-note {
+            border-left: 3px solid var(--unl-red);
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-top: clamp(28px, 5vw, 48px);
+            max-width: 38ch;
+            padding-left: 16px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--unl-green);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: clamp(24px, 4vw, 40px);
+        }
+
+        .card-header {
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+            padding-bottom: 18px;
+        }
+
+        .card-header h2 {
+            color: var(--unl-green-deep);
+            font-size: clamp(1.35rem, 3vw, 1.7rem);
+            line-height: 1.2;
+            margin-bottom: 6px;
+        }
+
+        .card-header p {
+            color: var(--muted);
+            font-size: 0.94rem;
+        }
+
+        .field-label {
+            display: block;
+            color: var(--ink);
+            font-size: 0.88rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input[type="url"] {
+            flex: 1;
+            min-width: 0;
+            min-height: 50px;
+            padding: 12px 16px;
+            background: #ffffff;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius);
+            color: var(--ink);
+            font-family: inherit;
+            font-size: 0.98rem;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        input[type="url"]::placeholder {
+            color: #7b857e;
+        }
+
+        input[type="url"]:hover {
+            border-color: #8d9a90;
+        }
+
+        input[type="url"]:focus {
+            border-color: var(--unl-green);
+            box-shadow: 0 0 0 3px rgba(20, 84, 58, 0.16);
+            outline: none;
+        }
+
+        .field-help {
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+
+        button {
+            font-family: inherit;
+            font-size: 0.94rem;
+            font-weight: 700;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        a:focus-visible {
+            outline: 3px solid rgba(166, 25, 46, 0.55);
+            outline-offset: 2px;
+        }
+
+        .primary-button {
+            min-height: 50px;
+            padding: 12px 22px;
+            background: var(--unl-green);
+            border: 1px solid var(--unl-green);
+            color: #ffffff;
+            white-space: nowrap;
+        }
+
+        .primary-button:hover {
+            background: var(--unl-green-deep);
+            border-color: var(--unl-green-deep);
+        }
+
+        .primary-button:active {
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.18);
+        }
+
+        .primary-button:disabled {
+            background: #7e9185;
+            border-color: #7e9185;
+            cursor: not-allowed;
+        }
+
+        .message {
+            display: none;
+            border-left: 4px solid transparent;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            font-size: 0.92rem;
+            margin-top: 18px;
+            padding: 12px 15px;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.error {
+            background: var(--error-bg);
+            border-left-color: var(--error);
+            color: var(--unl-red-dark);
+        }
+
+        .message.success {
+            background: var(--success-bg);
+            border-left-color: var(--success);
+            color: #174f34;
+        }
+
+        .result {
+            display: none;
+            background: #f8faf7;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-top: 24px;
+            padding: clamp(18px, 3vw, 24px);
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .result-label {
+            color: var(--muted);
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .result-status {
+            color: var(--success);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .short-url-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .short-url {
+            flex: 1;
+            min-width: 0;
+            padding: 11px 13px;
+            background: #ffffff;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius);
+            color: var(--unl-green-deep);
+            font-family: "Cascadia Mono", "Consolas", "Courier New", monospace;
+            font-size: 0.92rem;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .secondary-button {
+            min-height: 42px;
+            padding: 9px 15px;
+            background: #ffffff;
+            border: 1px solid var(--unl-green);
+            color: var(--unl-green-deep);
+            white-space: nowrap;
+        }
+
+        .secondary-button:hover {
+            background: var(--unl-green-soft);
+        }
+
+        .original-block {
+            border-top: 1px solid var(--border);
+            margin-top: 16px;
+            padding-top: 14px;
+        }
+
+        .original-url {
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-top: 4px;
+            overflow-wrap: anywhere;
+        }
+
+        .service-note {
+            border-top: 1px solid var(--border-strong);
+            color: var(--muted);
+            display: flex;
+            gap: 10px;
+            font-size: 0.88rem;
+            line-height: 1.55;
+            margin-top: clamp(40px, 7vw, 76px);
+            padding-top: 18px;
+        }
+
+        .service-note strong {
+            color: var(--unl-green-deep);
+        }
+
+        .site-footer {
+            background: rgba(255, 253, 249, 0.72);
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.78rem;
+            line-height: 1.5;
+            padding: 20px clamp(18px, 4vw, 40px);
+        }
+
+        .footer-inner {
+            width: min(1120px, 100%);
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .footer-inner p:last-child {
+            text-align: right;
+        }
+
+        @media (max-width: 820px) {
+            .hero {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+
+            .intro h1 {
+                font-size: clamp(3rem, 13vw, 4.4rem);
+            }
+
+            .subtitle {
+                max-width: 46ch;
+            }
+
+            .intro-note {
+                margin-top: 24px;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+            }
+
+            .footer-inner p:last-child {
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .header-inner {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .brand-meta {
+                text-align: left;
+            }
+
+            .input-group,
+            .short-url-container,
+            .result-actions {
+                flex-direction: column;
+            }
+
+            .primary-button,
+            .result-actions button {
+                width: 100%;
+            }
+
+            .short-url {
+                width: 100%;
+            }
+
+            .result-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <p class="brand-institution">Universidad Nacional de Loja</p>
+            <p class="brand-meta">Loja · Ecuador</p>
+        </div>
+    </header>
+
+    <main id="main-content" class="page-shell">
+        <div class="hero">
+            <section class="intro" aria-labelledby="page-title">
+                <p class="kicker">Servicio de enlaces académicos</p>
+                <h1 id="page-title">UniShort QR</h1>
+                <p class="subtitle">Servicio institucional de acortamiento de URL y generación de códigos QR</p>
+                <p class="intro-note">Una herramienta sencilla para compartir recursos, documentos y direcciones extensas en entornos académicos.</p>
+            </section>
+
+            <section class="card" aria-labelledby="form-title">
+                <div class="card-header">
+                    <h2 id="form-title">Acorta un enlace</h2>
+                    <p>Introduce una dirección web y obtén una URL breve para compartirla.</p>
+                </div>
+
+                <label class="field-label" for="urlInput">URL para acortar</label>
+                <div class="input-group">
+                    <input type="url" id="urlInput" placeholder="https://ejemplo.com/tu-url-larga" autocomplete="off" aria-describedby="urlHelp">
+                    <button id="shortenBtn" class="primary-button" type="button" onclick="shortenUrl()">Acortar URL</button>
+                </div>
+                <p id="urlHelp" class="field-help">Solo se admiten direcciones que comiencen con http:// o https://.</p>
+
+                <div class="message" id="message" role="status" aria-live="polite"></div>
+
+                <div class="result" id="result" aria-live="polite">
+                    <div class="result-header">
+                        <span class="result-label">Enlace generado</span>
+                        <span class="result-status">Listo para compartir</span>
+                    </div>
+                    <div class="short-url-container">
+                        <div class="short-url" id="shortUrl"></div>
+                        <div class="result-actions">
+                            <button class="secondary-button" type="button" onclick="copyUrl()">Copiar</button>
+                            <button class="secondary-button" type="button" onclick="openUrl()">Abrir</button>
+                        </div>
+                    </div>
+                    <div class="original-block">
+                        <span class="result-label">URL original</span>
+                        <div class="original-url" id="originalUrl"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <section class="service-note" aria-label="Alcance del servicio">
+            <p><strong>Proyecto académico.</strong> La creación de enlaces está disponible en esta versión. La generación de códigos QR se incorporará en una etapa posterior.</p>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <p>UniShort QR · Universidad Nacional de Loja</p>
+            <p>Proyecto académico. No constituye una aprobación oficial de la Universidad Nacional de Loja.</p>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+
+        async function shortenUrl() {
+            const urlInput = document.getElementById('urlInput');
+            const shortenBtn = document.getElementById('shortenBtn');
+            const messageDiv = document.getElementById('message');
+            const resultDiv = document.getElementById('result');
+
+            if (shortenBtn.disabled) return;
+
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showMessage('Por favor, introduce una URL válida.', 'error');
+                return;
+            }
+
+            let parsedUrl;
+            try {
+                parsedUrl = new URL(url);
+            } catch (error) {
+                showMessage('La URL introducida no es válida.', 'error');
+                return;
+            }
+
+            if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+                showMessage('Solo se permiten URLs http o https.', 'error');
+                return;
+            }
+
+            shortenBtn.disabled = true;
+            shortenBtn.textContent = 'Acortando...';
+            messageDiv.classList.remove('show');
+            resultDiv.classList.remove('show');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/shorten`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                if (!response.ok) {
+                    showMessage(await getErrorMessage(response), 'error');
+                    return;
+                }
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (error) {
+                    showMessage('El servidor devolvió una respuesta no válida. Inténtalo de nuevo.', 'error');
+                    return;
+                }
+
+                if (!data || typeof data.short_url !== 'string' || typeof data.original_url !== 'string') {
+                    showMessage('La respuesta del servidor está incompleta. Inténtalo de nuevo.', 'error');
+                    return;
+                }
+
+                document.getElementById('shortUrl').textContent = data.short_url;
+                document.getElementById('originalUrl').textContent = data.original_url;
+                resultDiv.classList.add('show');
+                showMessage('¡URL acortada correctamente!', 'success');
+            } catch (error) {
+                showMessage('No se pudo conectar con el servicio. Verifica que el backend esté en ejecución.', 'error');
+            } finally {
+                shortenBtn.disabled = false;
+                shortenBtn.textContent = 'Acortar URL';
+            }
+        }
+
+        async function getErrorMessage(response) {
+            const genericMessage = `No se pudo completar la solicitud (HTTP ${response.status}). Inténtalo de nuevo.`;
+            const contentType = response.headers.get('content-type') || '';
+
+            if (!contentType.includes('application/json')) {
+                return genericMessage;
+            }
+
+            try {
+                const data = await response.json();
+
+                if (typeof data.detail === 'string') {
+                    return data.detail;
+                }
+
+                if (Array.isArray(data.detail)) {
+                    const messages = data.detail
+                        .map(item => item && item.msg)
+                        .filter(Boolean);
+                    if (messages.length > 0) {
+                        return messages.join(' ');
+                    }
+                }
+
+                if (typeof data.message === 'string') {
+                    return data.message;
+                }
+            } catch (error) {
+                return genericMessage;
+            }
+
+            return genericMessage;
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message show ' + type;
+        }
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.setAttribute('readonly', '');
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            let copied = false;
+            try {
+                copied = document.execCommand('copy');
+            } catch (error) {
+                copied = false;
+            }
+
+            document.body.removeChild(textArea);
+            return copied;
+        }
+
+        async function copyUrl() {
+            const shortUrl = document.getElementById('shortUrl').textContent;
+
+            if (!shortUrl) {
+                return;
+            }
+
+            let copied = false;
+
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                try {
+                    await navigator.clipboard.writeText(shortUrl);
+                    copied = true;
+                } catch (error) {
+                    copied = fallbackCopy(shortUrl);
+                }
+            } else {
+                copied = fallbackCopy(shortUrl);
+            }
+
+            if (copied) {
+                showMessage('¡URL copiada al portapapeles!', 'success');
+            } else {
+                showMessage('No se pudo copiar automáticamente. Selecciona el enlace y cópialo manualmente.', 'error');
+            }
+        }
+
+        function openUrl() {
+            const shortUrl = document.getElementById('shortUrl').textContent;
+            window.open(shortUrl, '_blank', 'noopener,noreferrer');
+        }
+
+        document.getElementById('urlInput').addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                shortenUrl();
+            }
+        });
+    </script>
+</body>
+</html>
