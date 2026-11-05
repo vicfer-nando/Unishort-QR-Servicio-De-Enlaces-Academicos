@@ -126,19 +126,18 @@ No defina esa variable en producción salvo que acepte perder los datos.
 
 ## 6. Frontend
 
-En otra terminal:
+En otra terminal, desde la raíz (sin logs de IP ni consultas):
 
 ```powershell
-cd frontend
-py -m http.server 5500
+python scripts/serve_frontend.py
 ```
 
 Abre <http://localhost:5500>. El frontend llama a
 `http://localhost:8000/api/v1` y muestra también el QR descargable. Si cambias
 el host o el puerto del backend, define `window.UNISHORT_API_BASE_URL` antes de
 cargar el script o ajusta el valor por defecto en `frontend/index.html`. La API
-expone `X-Request-Id` para rastrear cada solicitud sin registrar datos
-personales.
+refleja `X-Request-Id` y expone `X-Log-Request-Id`, generado por el servidor
+para encontrar los logs sin registrar cabeceras arbitrarias del cliente.
 
 ## 7. API
 
@@ -225,8 +224,8 @@ python -m ruff format --check backend tests
 python -m mypy backend/app
 ```
 
-Resultado de la última ejecución (2026-11-05): **96 passed**, cobertura total
-**93.17 %** (umbral 85 %), `ruff` limpio y `mypy --strict` sin errores.
+Resultado de la revisión del 2026-11-05: **115 passed**, cobertura total
+**94,88 %** (umbral 85 %), `ruff` limpio y `mypy --strict` sin errores.
 
 Las pruebas usan SQLite aislada, aíslan la dependencia `get_db`, no acceden a la
 red pública y verifican contratos, códigos HTTP, reglas de negocio, QR
@@ -251,6 +250,10 @@ docker compose up --build
 - Frontend: <http://localhost:5500>
 - Datos: volumen `unishort-data`, base SQLite en `/data/unishort.db`.
 
+El frontend Docker usa `docker/nginx.conf` para omitir registros que incluyan
+IP o consultas. El servidor de desarrollo recomendado es
+`scripts/serve_frontend.py`, que también omite esos registros.
+
 Para habilitar administración en el contenedor:
 
 ```powershell
@@ -261,9 +264,11 @@ docker compose up --build
 No se incluyen secretos reales. La configuración de producción (HTTPS,
 PostgreSQL, proxy) queda documentada pero fuera de este incremento.
 
-> Los archivos `Dockerfile`, `docker-compose.yml` y `.dockerignore` están
-> incluidos. `docker compose config` se validó correctamente, pero el daemon de
-> Docker no estaba en ejecución, por lo que `docker compose up` no se ejecutó.
+> En la revisión actual Docker no está instalado ni disponible en PATH: no se
+> ejecutaron `docker compose config`, build ni arranque. La validación anterior
+> de `compose config` es histórica. Se revisaron estáticamente los dos servicios,
+> los healthchecks y el volumen. La imagen instala el lock y ejecuta Alembic
+> antes de Uvicorn; todavía debe probarse en un equipo con Docker.
 
 ## 10. Documentación
 
@@ -272,7 +277,7 @@ PostgreSQL, proxy) queda documentada pero fuera de este incremento.
 - ADR: `docs/adr/`.
 - BPMN: `docs/procesos/`.
 - C4: `docs/arquitectura/`.
-- Portal Quarto: `quarto/` (`quarto render`). Quarto no estaba instalado en el
+- Portal Quarto: `quarto/` (`python scripts/render_portal.py` desde raíz). Quarto no estaba instalado en el
   entorno usado, por lo que el render no se ejecutó aquí.
 - Trazabilidad de la evaluación: `docs/evaluacion/trazabilidad-evaluacion.md`.
 
@@ -285,8 +290,43 @@ PostgreSQL, proxy) queda documentada pero fuera de este incremento.
 - La guía oficial de la Evaluación Sumativa 1 no está incorporada al
   repositorio; los requisitos usados provienen del enunciado de la actividad y
   quedan registrados como fuente externa pendiente.
-- `docker compose config` se validó, pero el daemon de Docker no estaba en
-  ejecución; Quarto no está instalado. No se validó el arranque ni el render en
-  este entorno.
-- La latencia p95 (SC-004) y la prueba manual con usuario no técnico (US4) no
-  están medidas/registradas todavía.
+- Docker y Quarto no están disponibles en este entorno. El arranque de
+  contenedores y el render del portal siguen pendientes.
+- La automatización visual de Edge agotó el tiempo de autorización de la
+  herramienta. Sigue pendiente la prueba del navegador con una persona no
+  técnica (US4/SC-007), incluida la descarga física del archivo.
+- Se midió p95 HTTP local; no acredita latencia visual ni carga concurrente.
+- `/shorten` conserva su formato heredado, éxito 200 y deduplicación. Comparte
+  ahora el límite de tasa de v1 y rechaza credenciales embebidas; los clientes
+  deben contemplar 429. Para nuevas integraciones use `/api/v1/links`.
+
+## 12. Comprobaciones reproducibles y demostración
+
+```powershell
+python scripts/verify_database_copy.py
+python scripts/verify_runtime.py
+```
+
+El primer comando lee `unishort.db` en modo solo lectura, migra una copia
+temporal hasta `0003`, compara todas las filas y comprueba el hash del original.
+El segundo arranca API y frontend en 8000/5500 con una base temporal, verifica
+creación, QR decodificado, CORS, errores, administración, métricas, caducidad,
+desactivación y persistencia tras reinicio. Ambos puertos deben estar libres.
+Con `--serve`, mantiene el entorno temporal hasta Ctrl+C para probar la interfaz.
+El límite de tasa se desactiva solo en ese subproceso para la medición de 100
+peticiones por operación. Las pruebas normales sí verifican el límite.
+
+Medición del 2026-11-05: p95 HTTP por loopback **7,71 ms** creación y **6,31 ms**
+redirección; 100 muestras por operación, concurrencia 1, SQLite temporal.
+No es una medición de SC-004 en el navegador ni de capacidad en producción.
+
+El JavaScript real también tiene una comprobación con DOM y red simulados:
+`node scripts/verify_frontend.mjs` (Node 22+ opcional; también se ejecuta en CI).
+El workflow `.github/workflows/quality.yml` está preparado; su ejecución remota
+no se ha verificado porque no se hizo push.
+
+La guía de demostración y los resultados detallados están en
+[`docs/evaluacion/verificacion-2026-11-05.md`](docs/evaluacion/verificacion-2026-11-05.md).
+La base local y diez `.pyc` se retiraron **solo del índice** con
+`git rm --cached`; siguen en disco y en el historial. `.gitignore` evita
+añadirlos de nuevo. Estas retiradas están preparadas para revisión, sin commit.

@@ -8,9 +8,13 @@ en los módulos de la aplicación.
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from .domain import validate_destination_url
+from .errors import DomainError
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
@@ -79,6 +83,15 @@ class Settings(BaseSettings):
         normalized = value.strip().rstrip("/")
         if not normalized.startswith(("http://", "https://")):
             raise ValueError("UNISHORT_BASE_URL debe comenzar con http:// o https://")
+        try:
+            validate_destination_url(normalized)
+        except DomainError as error:
+            raise ValueError(
+                "UNISHORT_BASE_URL debe ser una URL absoluta sin credenciales"
+            ) from error
+        parsed = urlsplit(normalized)
+        if parsed.query or parsed.fragment:
+            raise ValueError("UNISHORT_BASE_URL no admite consulta ni fragmento")
         return normalized
 
     @field_validator("admin_api_key")

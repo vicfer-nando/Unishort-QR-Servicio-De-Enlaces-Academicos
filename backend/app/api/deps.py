@@ -3,7 +3,8 @@
 import secrets
 from typing import Optional
 
-from fastapi import Header, Request
+from fastapi import Request, Security
+from fastapi.security import APIKeyHeader
 
 from ..config import get_settings
 from ..errors import (
@@ -13,6 +14,8 @@ from ..errors import (
     RateLimitError,
 )
 from ..rate_limit import FixedWindowRateLimiter
+
+admin_key_scheme = APIKeyHeader(name="X-Admin-API-Key", auto_error=False)
 
 
 def _client_key(request: Request) -> str:
@@ -57,7 +60,7 @@ def enforce_create_rate_limit(request: Request) -> None:
 
 def require_admin(
     request: Request,
-    x_admin_api_key: Optional[str] = Header(default=None, alias="X-Admin-API-Key"),
+    x_admin_api_key: Optional[str] = Security(admin_key_scheme),
 ) -> None:
     """Exige una clave administrativa válida en la cabecera.
 
@@ -76,5 +79,7 @@ def require_admin(
         raise AdminNotConfiguredError
     if not x_admin_api_key:
         raise AdminAuthenticationRequiredError
-    if not secrets.compare_digest(x_admin_api_key, config.admin_api_key):
+    if not secrets.compare_digest(
+        x_admin_api_key.encode("utf-8"), config.admin_api_key.encode("utf-8")
+    ):
         raise AdminForbiddenError

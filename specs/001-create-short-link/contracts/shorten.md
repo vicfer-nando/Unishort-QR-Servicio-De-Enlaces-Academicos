@@ -1,6 +1,6 @@
 # Contract: endpoints heredados `POST /shorten` y `GET /s/{short_code}`
 
-**Contract version**: 1.2.0 | **API version**: 1.0.0 | **Fecha**: 2026-11-05 | **Estado**: implementado y conservado
+**Contract version**: 1.3.0 | **API version**: 1.0.0 | **Fecha**: 2026-11-05 | **Estado**: implementado y conservado
 
 Estos endpoints se mantienen por compatibilidad con el MVP, el frontend
 anterior y los enlaces ya publicados. La superficie recomendada para clientes
@@ -19,7 +19,9 @@ Content-Type: application/json
 - `url` es obligatorio y se valida con `pydantic.HttpUrl`.
 - Solo se aceptan esquemas `http` y `https`.
 - Los campos adicionales se ignoran.
-- No aplica límite de tasa ni autenticación.
+- No requiere autenticación. Comparte el límite de creación de v1 (429 con
+  envelope y `Retry-After`); cambiar de ruta no reinicia el contador.
+- Rechaza credenciales embebidas con `422` y detalle de validación heredado.
 - No acepta fecha de expiración.
 - Usa el mismo almacén que v1, pero conserva deduplicación y código de 6.
 
@@ -75,7 +77,7 @@ La redirección no consulta la URL de destino ni registra datos personales.
 | Longitud del código | 6 | 7 |
 | Deduplicación | Sí | No |
 | Envelope | No | Sí |
-| Límite de tasa | No | Sí (60/60 s) |
+| Límite de tasa | Sí, compartido con v1 | Sí (60/60 s) |
 | Expiración | No | `expires_at` opcional |
 | QR | No | `GET .../qr` |
 | Administración | No | Clave `X-Admin-API-Key` |
@@ -92,6 +94,7 @@ La redirección no consulta la URL de destino ni registra datos personales.
 
 | Versión | Fecha | Cambio |
 |---------|-------|--------|
+| 1.3.0 | 2026-11-05 | Corrección de seguridad: rechazo de credenciales (422) y límite compartido con v1 (429); éxito heredado conservado. |
 | 1.2.0 | 2026-11-05 | Documentados `410` para enlaces inactivos/caducados y la convivencia con `/api/v1`; añadida tabla comparativa. |
 | 1.1.0 | 2026-10-26 | Documentado el comportamiento realmente implementado: 200, 6 caracteres, deduplicación, `/s/{code}` y errores por defecto de Pydantic. |
 | 1.0.0 | 2026-10-21 | Contrato inicial de diseño. |

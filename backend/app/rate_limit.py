@@ -16,6 +16,7 @@ class _Window:
 
     started_at: float
     count: int
+    timer: Optional[threading.Timer] = None
 
 
 class FixedWindowRateLimiter:
@@ -52,9 +53,24 @@ class FixedWindowRateLimiter:
 
         window = self._windows.get(key)
         if window is None or now - window.started_at >= self.window_seconds:
+            if window is not None and window.timer is not None:
+                window.timer.cancel()
             window = _Window(started_at=now, count=0)
             self._windows[key] = window
+            timer = threading.Timer(
+                self.window_seconds, self._expire_key, args=(key, window)
+            )
+            timer.daemon = True
+            window.timer = timer
+            timer.start()
         return window
+
+    def _expire_key(self, key: str, window: _Window) -> None:
+        """Elimina una ventana incluso sin tráfico; no borra su reemplazo."""
+
+        with self._lock:
+            if self._windows.get(key) is window:
+                self._windows.pop(key)
 
     def check(self, key: str) -> bool:
         """Consume una unidad del límite.
@@ -85,7 +101,7 @@ class FixedWindowRateLimiter:
         now = self._clock()
         with self._lock:
             window = self._windows.get(key)
-            if window is None:
+            if window is None or now - window.started_at >= self.window_seconds:
                 return 0
             remaining = self.window_seconds - (now - window.started_at)
             return max(0, int(remaining) + (1 if remaining % 1 else 0))
@@ -95,12 +111,24 @@ class FixedWindowRateLimiter:
 
         with self._lock:
             if key is None:
+                for window in self._windows.values():
+                    if window.timer is not None:
+                        window.timer.cancel()
                 self._windows.clear()
             else:
-                self._windows.pop(key, None)
+                removed = self._windows.pop(key, None)
+                if removed is not None and removed.timer is not None:
+                    removed.timer.cancel()
 
     def active_keys(self) -> int:
         """Devuelve el número de ventanas en memoria (para pruebas)."""
 
         with self._lock:
+            expired = [
+                key
+                for key, window in self._windows.items()
+                if self._clock() - window.started_at >= self.window_seconds
+            ]
+            for key in expired:
+                self.reset(key)
             return len(self._windows)

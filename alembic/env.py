@@ -7,24 +7,26 @@ datos. No se ejecutan operaciones destructivas al adoptar una base existente.
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+from pathlib import Path
+
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
 
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND = ROOT / "backend"
 if str(BACKEND) not in sys.path:
     sys.path.insert(0, str(BACKEND))
 
+from app import models  # noqa: E402, F401
 from app.config import Settings  # noqa: E402
 from app.database import Base  # noqa: E402
 
 config = context.config
 
 settings = Settings()
-config.set_main_option("sqlalchemy.url", settings.database_url)
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 

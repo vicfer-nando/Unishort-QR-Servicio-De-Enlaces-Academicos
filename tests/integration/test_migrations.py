@@ -80,7 +80,7 @@ def test_upgrade_adopts_legacy_database_without_losing_rows(tmp_path, monkeypatc
         connection.close()
 
     assert row == ("legacy1", "https://example.edu/legado", 1, 0)
-    assert version == ("0002",)
+    assert version == ("0003",)
 
 
 def test_upgrade_creates_complete_fresh_database(tmp_path, monkeypatch):
@@ -100,6 +100,21 @@ def test_upgrade_creates_complete_fresh_database(tmp_path, monkeypatch):
         "expires_at",
         "click_count",
     } == columns
+
+    from app.database import Base
+
+    from alembic.autogenerate import compare_metadata
+    from alembic.migration import MigrationContext
+
+    engine = create_engine(f"sqlite:///{database_path.as_posix()}")
+    try:
+        with engine.connect() as connection:
+            assert (
+                compare_metadata(MigrationContext.configure(connection), Base.metadata)
+                == []
+            )
+    finally:
+        engine.dispose()
 
 
 def test_downgrade_requires_explicit_destructive_confirmation(tmp_path, monkeypatch):

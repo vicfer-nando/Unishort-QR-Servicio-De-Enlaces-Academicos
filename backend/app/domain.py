@@ -109,7 +109,10 @@ def validate_destination_url(raw_url: str, max_length: int = MAX_URL_LENGTH) -> 
     if any(ord(character) < 32 for character in candidate):
         raise InvalidURLDomainError(field="url")
 
-    parsed = urlsplit(candidate)
+    try:
+        parsed = urlsplit(candidate)
+    except ValueError as error:
+        raise InvalidHostError(field="url") from error
     scheme = parsed.scheme.lower()
     if scheme not in ALLOWED_SCHEMES:
         raise InvalidSchemeError(field="url")

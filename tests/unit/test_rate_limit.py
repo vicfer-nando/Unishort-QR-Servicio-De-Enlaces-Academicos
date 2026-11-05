@@ -51,3 +51,47 @@ def test_invalid_configuration_is_rejected():
         FixedWindowRateLimiter(max_requests=0)
     with pytest.raises(ValueError):
         FixedWindowRateLimiter(window_seconds=61)
+
+
+def test_expired_keys_are_removed_even_for_other_clients(fake_clock):
+    limiter = FixedWindowRateLimiter(window_seconds=10, clock=fake_clock)
+    limiter.check("old-client")
+    fake_clock.advance(10)
+    limiter.check("new-client")
+    assert limiter.active_keys() == 1
+    assert limiter.retry_after("old-client") == 0
+
+
+def test_timer_removes_idle_key_and_stale_timer_keeps_replacement(
+    fake_clock, monkeypatch
+):
+    callbacks = []
+
+    class FakeTimer:
+        def __init__(self, interval, function, args):
+            self.function = function
+            self.args = args
+            self.daemon = False
+            callbacks.append(self)
+
+        def start(self):
+            assert self.daemon is True
+
+        def cancel(self):
+            pass
+
+        def fire(self):
+            self.function(*self.args)
+
+    monkeypatch.setattr("app.rate_limit.threading.Timer", FakeTimer)
+    limiter = FixedWindowRateLimiter(window_seconds=10, clock=fake_clock)
+    limiter.check("idle")
+    callbacks[0].fire()
+    assert limiter.active_keys() == 0
+    limiter.check("replaced")
+    fake_clock.advance(10)
+    limiter.check("replaced")
+    callbacks[1].fire()
+    assert limiter.active_keys() == 1
+    limiter.reset("missing")
+    limiter.reset()

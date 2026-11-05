@@ -260,7 +260,7 @@ Task: "Implement URL validation in src/unishort/domain/url.py"          (T023)
 
 ---
 
-## Estado real de implementación (2026-11-05)
+## Estado de implementación anterior (referencia histórica)
 
 Esta sección reconcilia el plan original con el incremento entregado. El plan
 asumía un paquete `src/unishort/`; la implementación real vive en
@@ -309,7 +309,7 @@ total: **93.17 %** (`rate_limit.py` al 100 %). `ruff check`, `ruff format
 4. Registrar la verificación manual en navegador (US4/SC-007).
 5. Incorporar la guía oficial de la Evaluación Sumativa 1 como fuente externa.
 6. Ejecutar `docker compose config`/`up` y `quarto render` en un equipo con Docker y Quarto instalados; aquí no están disponibles.
-## Actualización 2026-11-06: cierre de pendientes técnicos
+## Actualización previa: cierre de pendientes técnicos
 
 **Evidencia ejecutada:** `python -m pytest tests -o addopts="" --disable-warnings --tb=short` → **96 passed**; cobertura total **93.17 %** (umbral 85 %). `ruff check`, `ruff format --check` y `mypy --strict` pasan sin errores.
 
@@ -320,3 +320,20 @@ total: **93.17 %** (`rate_limit.py` al 100 %). `ruff check`, `ruff format
 | T013 Alembic | Completado | `alembic.ini`, `alembic/env.py`, `0001_initial_schema.py` (adopción aditiva e idempotente) y `0002_add_created_at_index.py`; downgrade destructivo bloqueado salvo `UNISHORT_ALEMBIC_ALLOW_DESTRUCTIVE_DOWNGRADE=1`; 3 pruebas en `tests/integration/test_migrations.py`. También se migró una copia de `unishort.db` conservando sus 9 filas. |
 | Integración frontend | Completado | `frontend/index.html` acepta `window.UNISHORT_API_BASE_URL`; `tests/integration/test_frontend_flow.py` recorre creación, redirección 307 y descarga PNG. |
 | T052 pendientes | Actualizado | Quedan la verificación manual US4/SC-007, la guía oficial externa y la ejecución de Docker/Quarto en un equipo con esas herramientas. `docker compose config` sí se validó. |
+
+## Revisión vigente: 2026-11-05
+
+La evidencia anterior se conserva como historial y no acredita la versión
+actual por sí sola. El plan de correcciones y la trazabilidad R001-R006 están en
+[verification-2026-11-05.md](verification-2026-11-05.md). Los resultados vigentes
+están en [el informe de verificación](../../docs/evaluacion/verificacion-2026-11-05.md).
+
+- T005: existen ambos locks; no se reinstalaron en un entorno limpio aquí.
+- T009: JSON con rutas de plantilla, identificador interno y tipo de excepción.
+- T013: Alembic `0001`–`0003`; copia real con nueve filas conservadas.
+- T049: regresiones de PII, credenciales, rutas arbitrarias y parámetros SQL.
+- T050: 115 pruebas, 94,88 %; logs y limitador 100 %, estáticos limpios.
+- T052: HTTP real y JavaScript comprobados; navegador, Docker y Quarto pendientes.
+
+No se certifica aprobación del equipo ni ejecución de comandos Spec Kit que
+no se hayan observado. Las revisiones humanas de privacidad siguen pendientes.

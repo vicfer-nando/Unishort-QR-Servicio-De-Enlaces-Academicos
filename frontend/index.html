@@ -603,6 +603,29 @@
         const API_BASE_URL = (window.UNISHORT_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
         const API_PREFIX = '/api/v1';
 
+        // El atributo download se ignora para URLs de otro origen/puerto.
+        document.getElementById('qrDownload').addEventListener('click', async (event) => {
+            event.preventDefault();
+            const link = event.currentTarget;
+            try {
+                const response = await fetch(link.href);
+                if (!response.ok) {
+                    showMessage(await getErrorMessage(response), 'error');
+                    return;
+                }
+                const objectUrl = URL.createObjectURL(await response.blob());
+                const download = document.createElement('a');
+                download.href = objectUrl;
+                download.download = link.download;
+                document.body.appendChild(download);
+                download.click();
+                download.remove();
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+            } catch (error) {
+                showMessage('No se pudo conectar con el servicio. Verifica que el backend esté en ejecución.', 'error');
+            }
+        });
+
         async function shortenUrl() {
             const urlInput = document.getElementById('urlInput');
             const shortenBtn = document.getElementById('shortenBtn');

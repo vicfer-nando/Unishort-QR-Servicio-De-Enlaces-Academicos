@@ -94,7 +94,7 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/v1/links" -Headers $headers
 
 ## Contratos
 
-- [`v1-links.md`](../specs/001-create-short-link/contracts/v1-links.md)
-- [`shorten.md`](../specs/001-create-short-link/contracts/shorten.md)
-- [`errors.md`](../specs/001-create-short-link/contracts/errors.md)
-- [`qr.md`](../specs/002-generate-qr/contracts/qr.md)
+- [`v1-links.md`](sources/specs/001-create-short-link/contracts/v1-links.md)
+- [`shorten.md`](sources/specs/001-create-short-link/contracts/shorten.md)
+- [`errors.md`](sources/specs/001-create-short-link/contracts/errors.md)
+- [`qr.md`](sources/specs/002-generate-qr/contracts/qr.md)

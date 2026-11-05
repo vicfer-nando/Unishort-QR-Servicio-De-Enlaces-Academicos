@@ -1,200 +1,53 @@
-# Quickstart: UniShort QR (implementación actual)
+# Quickstart: UniShort QR — incremento actual
 
-**Fecha**: 2026-10-26 | **Estado**: acortador de URLs operativo
+Fecha: 2026-11-05. Se conserva FastAPI y el MVP existente.
 
-Esta guía describe la implementación que existe hoy en el repositorio: un backend
-FastAPI en `backend/app` y un frontend estático en `frontend/index.html`. Está
-escrita para Windows 10/11 con PowerShell.
+La guía anterior correspondía al MVP `/shorten`. La interfaz actual usa
+`POST /api/v1/links` con estado 201, siete símbolos y sin deduplicación.
+Existen QR, caducidad, desactivación, métricas agregadas, Alembic y clave
+administrativa provisional. Los roles y OIDC no están implementados.
+Proyecto académico sin aprobación oficial de la UNL.
 
-> **Alcance actual**: creación de enlaces cortos y redirección. La generación de
-> códigos QR, la autenticación, los roles, el panel administrativo, las
-> estadísticas y el rate limiting **no** están implementados todavía. UniShort QR
-> es un proyecto académico y no representa una aprobación oficial de la
-> Universidad Nacional de Loja.
+## Instalación y arranque
 
-## Requisitos
-
-- Python 3.11 o superior. En el entorno de desarrollo actual se usa Python 3.13.
-- PowerShell.
-- Un navegador moderno.
-
-## 1. Backend: dependencias
-
-Desde la raíz del repositorio:
+Desde raíz en PowerShell, siga [README](../../README.md), secciones 3–6.
+Para conservar el original use una base demo antes de ejecutar Alembic:
 
 ```powershell
-cd backend
+$env:UNISHORT_DATABASE_URL = "sqlite:///./demo-unishort.db"
+$env:UNISHORT_BASE_URL = "http://localhost:8000"
+$env:UNISHORT_ADMIN_API_KEY = [guid]::NewGuid().ToString("N")
+Write-Host "Clave temporal de demo: $env:UNISHORT_ADMIN_API_KEY"
+python -m alembic upgrade head
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
-El entorno virtual `backend/.venv` ya existe en este repositorio. Si falta, se
-puede crear una sola vez:
+En otra terminal, desde raíz:
 
 ```powershell
-py -m venv .venv
+python scripts/serve_frontend.py
 ```
 
-Actívalo e instala las dependencias:
+## Verificación
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
+1. Abrir `http://localhost:5500` y enviar `http://localhost:5500/?demo=unl`.
+2. Comprobar URL corta, imagen y descarga PNG. El QR codifica la URL corta.
+3. Abrir la URL corta: redirección 307 y contador incrementado.
+4. Abrir `http://localhost:8000/docs`; Authorize con la clave temporal.
+5. Listar enlaces y consultar stats. Sin clave: 401; incorrecta: 403.
+6. Desactivar con PATCH o DELETE: redirección y QR responden 410.
+7. Reactivar y asignar expiración futura; al vencer debe responder 410.
+8. Probar URL inválida (400/422), código inexistente (404) y `/health` (200).
+9. Reiniciar backend y comprobar persistencia. Registrar duración con una
+   persona no técnica; esa aceptación sigue pendiente.
 
-Si PowerShell bloquea la activación:
+Prueba automática por TCP sobre base temporal: `python scripts/verify_runtime.py`.
+Pruebas aisladas: `python -m pytest tests --cov=backend/app --cov-report=term-missing`.
 
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
+Contratos: [v1](contracts/v1-links.md), [heredado](contracts/shorten.md),
+[QR](../002-generate-qr/contracts/qr.md).
+Evidencia: [informe](../../docs/evaluacion/verificacion-2026-11-05.md).
 
-Para ejecutar las pruebas, instala también las dependencias de desarrollo:
-
-```powershell
-python -m pip install -r requirements-dev.txt
-```
-
-`requirements-dev.txt` incluye `requirements.txt`, `pytest` y `httpx`. Sin
-`httpx` no funciona `fastapi.testclient.TestClient`.
-
-## 2. Backend: base de datos y arranque
-
-No hay migraciones ni Alembic. Al importar `app.main`, SQLAlchemy crea
-automáticamente la tabla `short_urls` en el archivo SQLite `unishort.db` de la
-raíz del repositorio (`backend/app/database.py`).
-
-Arranca la API desde la carpeta `backend`:
-
-```powershell
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-- API: <http://127.0.0.1:8000/>
-- Documentación interactiva: <http://127.0.0.1:8000/docs>
-- OpenAPI: <http://127.0.0.1:8000/openapi.json>
-
-## 3. Frontend: arranque
-
-En otra terminal, desde la raíz del repositorio:
-
-```powershell
-cd frontend
-py -m http.server 5500
-```
-
-Abre <http://localhost:5500>. El frontend llama a la API en
-`http://localhost:8000`, valor definido en `frontend/index.html` mediante
-`API_BASE_URL`. Si cambias el host o el puerto del backend, actualiza esa
-constante. El backend permite CORS desde el origen del frontend.
-
-También se puede abrir `frontend/index.html` directamente, pero servir la página
-por HTTP evita restricciones del navegador relacionadas con el portapapeles.
-
-## 4. Contrato real de la API
-
-### Crear un enlace
-
-```http
-POST /shorten
-Content-Type: application/json
-
-{"url": "https://www.example.com/articulo?lang=es"}
-```
-
-Respuesta **200**:
-
-```json
-{
-  "short_code": "dfgBoG",
-  "short_url": "http://localhost:8000/s/dfgBoG",
-  "original_url": "https://www.example.com/articulo?lang=es"
-}
-```
-
-Comportamiento observado:
-
-- `short_code` tiene 6 caracteres alfanuméricos.
-- `short_url` usa el host de la petición y la ruta `/s/{short_code}`.
-- Si se envía la misma URL otra vez, se devuelve el mismo `short_code`
-  (deduplicación).
-- No se devuelve 201; la implementación responde 200.
-
-### Resolver un enlace
-
-```http
-GET /s/dfgBoG
-```
-
-Responde **307** con la URL original en la cabecera `Location`. Un código
-inexistente responde **404** con:
-
-```json
-{"detail": "Enlace corto no encontrado"}
-```
-
-### Entradas inválidas
-
-FastAPI/Pydantic responde **422** con un arreglo `detail`, por ejemplo para
-esquemas distintos de `http`/`https`, URLs malformadas, campos ausentes o URLs
-de más de 2083 caracteres. El frontend traduce ese arreglo a un mensaje legible.
-
-## 5. Pruebas
-
-Desde la raíz del repositorio, sin necesidad de arrancar el servidor:
-
-```powershell
-backend\.venv\Scripts\python.exe -m pytest tests -q
-```
-
-O con el entorno activado:
-
-```powershell
-pytest tests -q
-```
-
-Las pruebas usan `TestClient` y una base SQLite en memoria con la dependencia
-`get_db` sobrescrita, por lo que no escriben en `unishort.db` ni requieren un
-servidor levantado manualmente. Cubren:
-
-- raíz de la API y disponibilidad de OpenAPI;
-- creación de enlaces, forma de la respuesta y código de 6 caracteres;
-- deduplicación de URLs repetidas;
-- códigos distintos para URLs distintas;
-- redirección 307 y 404 para códigos inexistentes;
-- entradas inválidas (esquema, URL malformada, campo ausente y URL demasiado
-  larga);
-- preflight CORS desde el origen del frontend.
-
-## 6. Verificación manual en el navegador
-
-1. Arranca el backend en el puerto 8000.
-2. Arranca el frontend en el puerto 5500.
-3. Abre <http://localhost:5500>.
-4. Introduce `https://www.example.com/articulo?lang=es` y pulsa **Acortar URL**.
-5. Comprueba que aparece la URL corta con la ruta `/s/{short_code}`.
-6. Pulsa **Copiar** y verifica el mensaje de confirmación. Si el navegador
-   bloquea el portapapeles, la interfaz muestra un aviso para copiar el enlace
-   manualmente.
-7. Pulsa **Abrir** y comprueba que se abre la URL original.
-8. Repite la misma URL: debe mostrarse el mismo código.
-9. Prueba `javascript:alert(1)` y una dirección malformada: no se debe crear
-   ningún enlace y debe aparecer un mensaje de error.
-
-## 7. Criterios de aceptación verificables
-
-| Criterio | Comprobación |
-|----------|--------------|
-| Crear enlace | `POST /shorten` con URL válida responde 200 y devuelve los tres campos. |
-| Deduplicar | Enviar dos veces la misma URL devuelve el mismo `short_code`. |
-| Redirigir | `GET /s/{short_code}` responde 307 hacia la URL original. |
-| Rechazar entradas inválidas | Esquemas no http/https y URLs malformadas responden 422 sin crear enlaces. |
-| Interfaz | El formulario, copiar y abrir funcionan en el navegador. |
-| Pruebas | `pytest tests -q` pasa sin un servidor levantado manualmente. |
-| Persistencia | Los enlaces se guardan en `unishort.db` y sobreviven a un reinicio del backend. |
-
-## 8. Fuera de alcance en esta versión
-
-- Generación de códigos QR (el nombre y el subtítulo del proyecto la mencionan,
-  pero aún no está implementada).
-- Autenticación, roles y panel administrativo.
-- Estadísticas avanzadas.
-- Rate limiting.
-- Migraciones de base de datos o PostgreSQL.
+Docker: `docker compose up --build` (pendiente de ejecución local).
+Portal: `python scripts/render_portal.py` requiere Quarto instalado;
+`--prepare-only` prepara recursos sin afirmar que se renderizaron.

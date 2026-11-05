@@ -10,8 +10,9 @@ from __future__ import annotations
 import os
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision: str = "0001"
 down_revision: Union[str, None] = None
@@ -99,13 +100,9 @@ def upgrade() -> None:
     if "ix_short_urls_id" not in indexes:
         op.create_index("ix_short_urls_id", TABLE, ["id"], unique=False)
     if "ix_short_urls_short_code" not in indexes:
-        op.create_index(
-            "ix_short_urls_short_code", TABLE, ["short_code"], unique=True
-        )
+        op.create_index("ix_short_urls_short_code", TABLE, ["short_code"], unique=True)
     if "ix_short_urls_expires_at" not in indexes:
-        op.create_index(
-            "ix_short_urls_expires_at", TABLE, ["expires_at"], unique=False
-        )
+        op.create_index("ix_short_urls_expires_at", TABLE, ["expires_at"], unique=False)
 
 
 def downgrade() -> None:

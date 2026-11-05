@@ -55,16 +55,16 @@ flowchart TB
 
 | ADR | Decisión | Consecuencia principal |
 |-----|----------|------------------------|
-| [0001](../docs/adr/0001-fastapi-vs-django-rest-framework.md) | FastAPI en lugar de Django REST Framework | Se conserva el MVP y se evita una reescritura. |
-| [0002](../docs/adr/0002-sqlite-desarrollo-postgresql-futuro.md) | SQLite en desarrollo, PostgreSQL futuro | Migración aditiva; no se recrea la BD. |
-| [0003](../docs/adr/0003-generacion-codigo-corto.md) | Código de 7 caracteres sin ambigüedad con `secrets` | Menos errores de transcripción y colisiones. |
-| [0004](../docs/adr/0004-autenticacion-provisional-administrativa.md) | Clave administrativa provisional | Control de acceso real, sustituible por OIDC. |
-| [0005](../docs/adr/0005-api-versionada-envelope-errores.md) | `/api/v1`, envelope y errores localizados | Contrato estable y compatibilidad heredada. |
+| [0001](sources/docs/adr/0001-fastapi-vs-django-rest-framework.md) | FastAPI en lugar de Django REST Framework | Se conserva el MVP y se evita una reescritura. |
+| [0002](sources/docs/adr/0002-sqlite-desarrollo-postgresql-futuro.md) | SQLite en desarrollo, PostgreSQL futuro | Migración aditiva; no se recrea la BD. |
+| [0003](sources/docs/adr/0003-generacion-codigo-corto.md) | Código de 7 caracteres sin ambigüedad con `secrets` | Menos errores de transcripción y colisiones. |
+| [0004](sources/docs/adr/0004-autenticacion-provisional-administrativa.md) | Clave administrativa provisional | Control de acceso real, sustituible por OIDC. |
+| [0005](sources/docs/adr/0005-api-versionada-envelope-errores.md) | `/api/v1`, envelope y errores localizados | Contrato estable y compatibilidad heredada. |
 
 ## Diagramas fuente
 
-- Structurizr DSL (C1-C3): [`docs/arquitectura/unishort-c4.dsl`](../docs/arquitectura/unishort-c4.dsl)
-- PlantUML (C4 código): [`docs/arquitectura/c4-codigo.puml`](../docs/arquitectura/c4-codigo.puml)
+- Structurizr DSL (C1-C3): [`docs/arquitectura/unishort-c4.dsl`](sources/docs/arquitectura/unishort-c4.dsl)
+- PlantUML (C4 código): [`docs/arquitectura/c4-codigo.puml`](sources/docs/arquitectura/c4-codigo.puml)
 
 ## Principios aplicados
 

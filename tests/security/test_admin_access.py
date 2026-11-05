@@ -10,6 +10,31 @@ def test_creation_remains_public(client):
     assert response.status_code == 201
 
 
+def test_legacy_creation_rejects_credentials(client):
+    response = client.post(
+        "/shorten", json={"url": "https://user:password@example.edu"}
+    )
+    assert response.status_code == 422
+
+
+def test_legacy_creation_cannot_bypass_v1_rate_limit(client, monkeypatch):
+    from app.rate_limit import FixedWindowRateLimiter
+
+    monkeypatch.setattr(
+        client.app.state, "rate_limiter", FixedWindowRateLimiter(max_requests=1)
+    )
+    assert (
+        client.post(
+            "/api/v1/links", json={"url": "https://example.edu/first"}
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post("/shorten", json={"url": "https://example.edu/second"}).status_code
+        == 429
+    )
+
+
 def test_admin_list_requires_key(client, admin_key):
     missing = client.get("/api/v1/links")
     wrong = client.get("/api/v1/links", headers={"X-Admin-API-Key": "incorrecta"})

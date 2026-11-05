@@ -56,6 +56,16 @@ class ResponseMeta(BaseModel):
     language: str = "es"
 
 
+class ErrorEnvelope(BaseModel):
+    """Respuesta de error real, compartida por dominio y validación HTTP."""
+
+    success: bool = False
+    message: str
+    data: None = None
+    errors: List[ErrorItem]
+    meta: ResponseMeta
+
+
 class LinkData(BaseModel):
     """Representación pública de un enlace corto."""
 

@@ -34,19 +34,19 @@ Incremento funcional sobre el MVP de UniShort QR:
 
 ```text
 python -m pytest tests -q
-84 passed in 1.23s
+115 passed in 1.23s
 
 python -m pytest tests --cov=backend/app --cov-report=term-missing
-84 passed; cobertura total 92.78 % (rate_limit.py 100 %)
+115 passed; cobertura total 94,88 % (rate_limit.py 100 %)
 
 python -m ruff check backend tests
 All checks passed!
 
 python -m ruff format --check backend tests
-31 files already formatted
+46 files already formatted
 
 python -m mypy backend/app   # strict=true en pyproject.toml
-Success: no issues found in 19 source files
+Success: no issues found in 20 source files
 ```
 
 ## Pendientes explícitos
@@ -80,3 +80,12 @@ No se almacenan datos personales de visitantes ni de creadores. No se consulta
 la URL de destino. No se incluyen secretos reales. La integración con la
 identidad institucional y el despliegue PostgreSQL quedan documentados como
 trabajo futuro, no como funcionalidad entregada.
+
+## Revisión vigente del 2026-11-05
+
+La ejecución HTTP real, el JavaScript con DOM simulado, los límites y las
+correcciones están documentados en [el informe de verificación](sources/docs/evaluacion/verificacion-2026-11-05.md).
+La comprobación visual de Edge agotó la autorización de la herramienta.
+Docker y Quarto no están disponibles; no se acredita build ni render.
+El p95 HTTP local fue 7,71 ms al crear y 6,31 ms al redirigir (100 muestras,
+concurrencia 1); no sustituye SC-004 visual ni SC-007 con persona no técnica.

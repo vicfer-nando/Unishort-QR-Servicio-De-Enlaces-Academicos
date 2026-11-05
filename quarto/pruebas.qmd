@@ -6,7 +6,7 @@ title: "Pruebas y evidencias"
 
 ```text
 python -m pytest tests -q
-84 passed
+115 passed
 ```
 
 Fecha de la última ejecución: **2026-11-05**. Las pruebas usan SQLite aislada,
@@ -50,11 +50,11 @@ python -m mypy backend/app
 
 | Control | Estado |
 |---------|--------|
-| Suite funcional | Verde: 84 pruebas. |
-| Cobertura medida | 92.78 % total; umbral 85 % superado; `rate_limit.py` 100 %. |
+| Suite funcional | Verde: 115 pruebas. |
+| Cobertura medida | 94,88 % total; umbral 85 % superado; `rate_limit.py` 100 %. |
 | `ruff check` | `All checks passed!` |
-| `ruff format --check` | 31 archivos ya formateados. |
-| `mypy --strict` | Sin errores en 19 archivos fuente. |
+| `ruff format --check` | 46 archivos ya formateados. |
+| `mypy --strict` | Sin errores en 20 archivos fuente. |
 | Verificación manual en navegador | Pendiente de registrar. |
 
 > La cobertura y los análisis estáticos se midieron el 2026-11-05. Docker y
@@ -68,3 +68,12 @@ python -m mypy backend/app
 2. Ejecutar `python -m pytest tests -q` desde la raíz.
 3. Abrir `/docs` y crear un enlace.
 4. Descargar el QR y comprobar que apunta a `/s/{code}`.
+
+## Revisión vigente del 2026-11-05
+
+La ejecución HTTP real, el JavaScript con DOM simulado, los límites y las
+correcciones están documentados en [el informe de verificación](sources/docs/evaluacion/verificacion-2026-11-05.md).
+La comprobación visual de Edge agotó la autorización de la herramienta.
+Docker y Quarto no están disponibles; no se acredita build ni render.
+El p95 HTTP local fue 7,71 ms al crear y 6,31 ms al redirigir (100 muestras,
+concurrencia 1); no sustituye SC-004 visual ni SC-007 con persona no técnica.

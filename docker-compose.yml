@@ -9,6 +9,14 @@ services:
       UNISHORT_DATABASE_URL: sqlite:////data/unishort.db
       UNISHORT_BASE_URL: ${UNISHORT_BASE_URL:-http://localhost:8000}
       UNISHORT_ADMIN_API_KEY: ${UNISHORT_ADMIN_API_KEY:-}
+      UNISHORT_CORS_ORIGINS: ${UNISHORT_CORS_ORIGINS:-http://localhost:5500,http://127.0.0.1:5500}
+      UNISHORT_LOG_LEVEL: ${UNISHORT_LOG_LEVEL:-INFO}
+      UNISHORT_RATE_LIMIT_ENABLED: ${UNISHORT_RATE_LIMIT_ENABLED:-true}
+      UNISHORT_RATE_LIMIT_MAX: ${UNISHORT_RATE_LIMIT_MAX:-60}
+      UNISHORT_RATE_LIMIT_WINDOW_SECONDS: ${UNISHORT_RATE_LIMIT_WINDOW_SECONDS:-60}
+      UNISHORT_SHORT_CODE_LENGTH: ${UNISHORT_SHORT_CODE_LENGTH:-7}
+      UNISHORT_QR_BOX_SIZE: ${UNISHORT_QR_BOX_SIZE:-10}
+      UNISHORT_QR_BORDER: ${UNISHORT_QR_BORDER:-4}
     ports:
       - "8000:8000"
     volumes:
@@ -31,10 +39,17 @@ services:
       - "5500:80"
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   unishort-data:

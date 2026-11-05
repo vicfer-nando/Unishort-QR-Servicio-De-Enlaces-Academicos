@@ -35,6 +35,8 @@ _ADDITIVE_COLUMNS: dict[str, str] = {
 }
 
 _ADDITIVE_INDEXES: dict[str, str] = {
+    "ix_short_urls_created_at": "CREATE INDEX IF NOT EXISTS ix_short_urls_created_at "
+    "ON short_urls (created_at)",
     "ix_short_urls_expires_at": "CREATE INDEX IF NOT EXISTS ix_short_urls_expires_at "
     "ON short_urls (expires_at)",
     "ix_short_urls_is_active": "CREATE INDEX IF NOT EXISTS ix_short_urls_is_active "

@@ -18,7 +18,10 @@ dist/
 .env.*
 !.env.example
 
-# Base de datos local (el archivo existente se conserva en el repositorio)
+# Bases locales: conservar en disco, retirar solo del índice de Git.
+*.db
+*.sqlite
+*.sqlite3
 *.db-journal
 *.db-wal
 *.db-shm
@@ -26,7 +29,9 @@ dist/
 # Quarto
 quarto/_site/
 quarto/.quarto/
+quarto/sources/
 
 # Sistema operativo
 Thumbs.db
 .DS_Store
+.verification/

@@ -35,7 +35,7 @@ python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --n
 
 - Swagger: <http://127.0.0.1:8000/docs>
 - Health: <http://127.0.0.1:8000/health>
-- Frontend: `cd frontend; py -m http.server 5500`
+- Frontend: `python scripts/serve_frontend.py`
 
 ## Navegación
 
@@ -48,10 +48,10 @@ python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --n
 
 ## Referencias del repositorio
 
-- [`README.md`](../README.md)
-- [`specs/001-create-short-link/spec.md`](../specs/001-create-short-link/spec.md)
-- [`specs/001-create-short-link/contracts/v1-links.md`](../specs/001-create-short-link/contracts/v1-links.md)
-- [`specs/002-generate-qr/spec.md`](../specs/002-generate-qr/spec.md)
-- [`docs/adr/`](../docs/adr/)
-- [`docs/procesos/creacion-enlace.bpmn`](../docs/procesos/creacion-enlace.bpmn)
-- [`docs/arquitectura/unishort-c4.dsl`](../docs/arquitectura/unishort-c4.dsl)
+- [`README.md`](sources/README.md)
+- [`specs/001-create-short-link/spec.md`](sources/specs/001-create-short-link/spec.md)
+- [`specs/001-create-short-link/contracts/v1-links.md`](sources/specs/001-create-short-link/contracts/v1-links.md)
+- [`specs/002-generate-qr/spec.md`](sources/specs/002-generate-qr/spec.md)
+- [`docs/adr/`](sources/docs/adr/)
+- [`docs/procesos/creacion-enlace.bpmn`](sources/docs/procesos/creacion-enlace.bpmn)
+- [`docs/arquitectura/unishort-c4.dsl`](sources/docs/arquitectura/unishort-c4.dsl)

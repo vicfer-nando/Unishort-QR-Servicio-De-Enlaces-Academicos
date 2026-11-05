@@ -7,8 +7,8 @@ title: "Procesos BPMN"
 Creación de un enlace corto, generación del QR y redirección al destino. El
 modelo usa BPMN 2.0.2 con tres carriles: usuario académico, API y servicio QR.
 
-- Análisis: [`docs/procesos/analisis-bpmn.md`](../docs/procesos/analisis-bpmn.md)
-- XML BPMN: [`docs/procesos/creacion-enlace.bpmn`](../docs/procesos/creacion-enlace.bpmn)
+- Análisis: [`docs/procesos/analisis-bpmn.md`](sources/docs/procesos/analisis-bpmn.md)
+- XML BPMN: [`docs/procesos/creacion-enlace.bpmn`](sources/docs/procesos/creacion-enlace.bpmn)
 
 ## Flujo principal
 

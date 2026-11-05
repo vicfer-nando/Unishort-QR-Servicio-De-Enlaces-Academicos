@@ -4,7 +4,13 @@
 
 **Created**: 2026-10-21
 
-**Status**: Draft
+**Status**: Implementado; aceptación manual US4/SC-007 pendiente.
+
+**Revisión 2026-11-05:** el alcance de creación de este documento se conserva.
+QR se especifica en `../002-generate-qr/spec.md`; administración y redirección
+ya existentes se describen en `contracts/v1-links.md`. Las aclaraciones,
+regresiones y tareas de esta revisión están en
+[verification-2026-11-05.md](verification-2026-11-05.md).
 
 **Input**: User description: "Crear enlaces cortos: el usuario introduce una URL
 válida y recibe un enlace corto único que puede compartir. Se debe validar el

@@ -13,12 +13,19 @@ from .deps import enforce_create_rate_limit, require_admin
 from .envelope import success_envelope
 from .schemas import (
     CreateLinkRequest,
+    ErrorEnvelope,
     LinkEnvelope,
     LinkListEnvelope,
     UpdateLinkRequest,
 )
 
-router = APIRouter(tags=["links"])
+router = APIRouter(
+    tags=["links"],
+    responses={
+        code: {"model": ErrorEnvelope}
+        for code in (400, 401, 403, 404, 409, 410, 422, 429, 500, 503)
+    },
+)
 
 
 @router.post(
@@ -27,11 +34,11 @@ router = APIRouter(tags=["links"])
     status_code=201,
     summary="Crear un enlace corto",
     responses={
-        400: {"description": "URL de dominio inválida"},
-        409: {"description": "Colisión de código no resuelta"},
-        422: {"description": "Cuerpo inválido"},
-        429: {"description": "Límite de creación superado"},
-        500: {"description": "Fallo de persistencia"},
+        400: {"model": ErrorEnvelope, "description": "URL de dominio inválida"},
+        409: {"model": ErrorEnvelope, "description": "Colisión de código no resuelta"},
+        422: {"model": ErrorEnvelope, "description": "Cuerpo inválido"},
+        429: {"model": ErrorEnvelope, "description": "Límite de creación superado"},
+        500: {"model": ErrorEnvelope, "description": "Fallo de persistencia"},
     },
 )
 def create_link(
@@ -191,8 +198,8 @@ def deactivate_link(
     response_class=Response,
     responses={
         200: {"content": {"image/png": {}}, "description": "Imagen PNG del QR"},
-        404: {"description": "Enlace inexistente"},
-        410: {"description": "Enlace desactivado o caducado"},
+        404: {"model": ErrorEnvelope, "description": "Enlace inexistente"},
+        410: {"model": ErrorEnvelope, "description": "Enlace desactivado o caducado"},
     },
 )
 def get_link_qr(

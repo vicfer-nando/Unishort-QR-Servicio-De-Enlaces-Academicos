@@ -5,8 +5,8 @@ title: "Requisitos y trazabilidad"
 ## Fuente de requisitos
 
 Los requisitos provienen de la especificación
-[`001-create-short-link`](../specs/001-create-short-link/spec.md) y de la
-especificación de QR [`002-generate-qr`](../specs/002-generate-qr/spec.md).
+[`001-create-short-link`](sources/specs/001-create-short-link/spec.md) y de la
+especificación de QR [`002-generate-qr`](sources/specs/002-generate-qr/spec.md).
 
 > La guía oficial de la Evaluación Sumativa 1 no está incorporada al
 > repositorio. Se registra como fuente externa pendiente; no se inventan
@@ -72,3 +72,12 @@ especificación de QR [`002-generate-qr`](../specs/002-generate-qr/spec.md).
 - PostgreSQL desplegado.
 - Métricas por visitante o eventos individuales.
 - Analítica con datos personales.
+
+## Revisión vigente del 2026-11-05
+
+La ejecución HTTP real, el JavaScript con DOM simulado, los límites y las
+correcciones están documentados en [el informe de verificación](sources/docs/evaluacion/verificacion-2026-11-05.md).
+La comprobación visual de Edge agotó la autorización de la herramienta.
+Docker y Quarto no están disponibles; no se acredita build ni render.
+El p95 HTTP local fue 7,71 ms al crear y 6,31 ms al redirigir (100 muestras,
+concurrencia 1); no sustituye SC-004 visual ni SC-007 con persona no técnica.

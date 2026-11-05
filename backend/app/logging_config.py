@@ -39,12 +39,17 @@ SENSITIVE_FIELDS = frozenset(
         "url",
         "original_url",
         "destination_url",
+        "x-admin-api-key",
+        "x_admin_api_key",
     }
 )
 
 _URL_PATTERN = re.compile(r"https?://[^\s\"']+", re.IGNORECASE)
 _SECRET_PATTERN = re.compile(
-    r"(?i)\b(authorization|token|api[_-]?key|cookie|password|secret)\b\s*[=:]\s*\S+"
+    r"(?i)\b(authorization|token|api[_-]?key|cookie|password|secret)\b\s*[=:]\s*(?:Bearer\s+)?\S+"
+)
+_PERSONAL_PATTERN = re.compile(
+    r"[\w.+-]+@[\w.-]+|\b(?:\d{1,3}\.){3}\d{1,3}\b|(?<![\w:])(?:[a-fA-F0-9]{0,4}:){2,}[a-fA-F0-9:]*"
 )
 _STANDARD_RECORD_FIELDS = frozenset(
     logging.LogRecord("", 0, "", 0, "", (), None).__dict__
@@ -88,9 +93,10 @@ def _sanitize_text(value: str) -> str:
     """Redacta URLs completas y pares clave-valor con secretos."""
 
     without_urls = _URL_PATTERN.sub(REDACTED_URL, value)
-    return _SECRET_PATTERN.sub(
+    without_secrets = _SECRET_PATTERN.sub(
         lambda match: f"{match.group(1)}={REDACTED}", without_urls
     )
+    return _PERSONAL_PATTERN.sub(REDACTED, without_secrets)
 
 
 def _sanitize_value(value: Any) -> Any:
@@ -143,7 +149,7 @@ class JsonFormatter(logging.Formatter):
         -------
         str
             Línea JSON con marca de tiempo UTC, nivel, logger y metadatos
-            seguros. La traza de una excepción también se redacta.
+            seguros. De las excepciones solo se conserva el nombre del tipo.
         """
 
         payload: Dict[str, Any] = {
@@ -160,7 +166,10 @@ class JsonFormatter(logging.Formatter):
             payload["request_id"] = _sanitize_text(str(request_id))
         payload.update(_extra_fields(record))
         if record.exc_info:
-            payload["exception"] = _sanitize_text(self.formatException(record.exc_info))
+            # SQLAlchemy puede incluir parámetros SQL en una traza. Solo el tipo
+            # de excepción es metadato seguro; no se serializa texto arbitrario.
+            error_type = record.exc_info[0]
+            payload["exception"] = error_type.__name__ if error_type else "Exception"
         return json.dumps(payload, ensure_ascii=False, default=str)
 
 

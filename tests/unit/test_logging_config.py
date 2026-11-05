@@ -158,3 +158,20 @@ def test_request_id_helpers_restore_context():
     finally:
         reset_request_id(token)
     assert get_request_id() is None
+
+
+def test_formatter_redacts_pii_and_bearer_and_never_serializes_sql_parameters():
+    record = _record(
+        "person@example.edu 192.0.2.1 2001:db8::1 authorization=Bearer abc"
+    )
+    record.exc_info = (
+        RuntimeError,
+        RuntimeError("bound parameter: private-person"),
+        None,
+    )
+    payload = json.loads(JsonFormatter().format(record))
+    assert "person@" not in payload["message"]
+    assert "192.0.2.1" not in payload["message"]
+    assert "2001:db8::1" not in payload["message"]
+    assert "abc" not in payload["message"]
+    assert payload["exception"] == "RuntimeError"

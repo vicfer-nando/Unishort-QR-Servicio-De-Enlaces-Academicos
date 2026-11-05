@@ -13,12 +13,23 @@ BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-_BOOTSTRAP_DB = Path(tempfile.gettempdir()) / "unishort_pytest_bootstrap.db"
-os.environ.setdefault("UNISHORT_DATABASE_URL", f"sqlite:///{_BOOTSTRAP_DB.as_posix()}")
-os.environ.setdefault("UNISHORT_BASE_URL", "http://localhost:8000")
+# Nunca heredar una base real del entorno o de .env durante la colección.
+_BOOTSTRAP_DIRECTORY = tempfile.TemporaryDirectory(prefix="unishort-pytest-")
+_BOOTSTRAP_DB = Path(_BOOTSTRAP_DIRECTORY.name) / "bootstrap.db"
+os.environ["UNISHORT_DATABASE_URL"] = f"sqlite:///{_BOOTSTRAP_DB.as_posix()}"
+os.environ["UNISHORT_BASE_URL"] = "http://localhost:8000"
 
 from app.database import Base, get_db  # noqa: E402
+from app.database import engine as bootstrap_engine  # noqa: E402
 from app.main import app  # noqa: E402
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Cierra SQLite antes de limpiar el directorio temporal en Windows."""
+
+    app.state.rate_limiter.reset()
+    bootstrap_engine.dispose()
+    _BOOTSTRAP_DIRECTORY.cleanup()
 
 
 def _build_test_engine():

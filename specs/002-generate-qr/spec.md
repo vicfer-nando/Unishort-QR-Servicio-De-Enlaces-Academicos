@@ -6,6 +6,11 @@
 
 **Status**: Implemented
 
+**Revisión 2026-11-05:** el endpoint está verificado por HTTP y decodificación.
+La descarga entre puertos usa Blob local; su JavaScript tiene una prueba
+ejecutable con DOM simulado. La comprobación visual en navegador permanece
+pendiente por bloqueo de la herramienta. Véanse `plan.md` y `tasks.md`.
+
 **Input**: Incremento de la Evaluación Sumativa 1. La generación de QR quedó
 explícitamente fuera del alcance de `001-create-short-link`; esta especificación
 la incorpora como evolución del servicio existente.

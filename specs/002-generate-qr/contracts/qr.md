@@ -85,6 +85,12 @@ Ejemplo `404`:
 
 ## Implementación y pruebas
 
+El frontend obtiene el PNG con `fetch`, crea una URL Blob local y descarga
+el archivo `unishort-{short_code}.png`. Esto evita que el navegador ignore
+`download` por el puerto distinto de la API. No cambia el contrato del endpoint
+ni almacena el QR en el servidor. `scripts/verify_frontend.mjs` verifica el
+JavaScript real con DOM y red simulados; la descarga visual está pendiente.
+
 - Generación: `backend/app/qr.py` (`generate_qr_png`).
 - Endpoint: `backend/app/api/v1.py` (`get_link_qr`).
 - Pruebas: `tests/integration/test_qr.py` (decodificación con OpenCV),

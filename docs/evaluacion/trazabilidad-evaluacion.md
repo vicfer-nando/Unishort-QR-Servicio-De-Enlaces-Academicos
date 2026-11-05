@@ -6,6 +6,10 @@
 
 ## 1. Fuentes de requisitos
 
+La evidencia vigente de la continuación se recoge en la sección 12 y en
+[el informe de verificación](verificacion-2026-11-05.md). Los resultados de
+las secciones 8–11 son antecedentes del incremento anterior.
+
 | Fuente | Ubicación | Estado |
 |--------|-----------|--------|
 | Especificación de creación de enlaces | `specs/001-create-short-link/spec.md` | Disponible |
@@ -105,7 +109,7 @@
 | Redirección sin cuerpo | `RedirectResponse` | Implementado |
 | Errores sin trazas internas | Handler global | Implementado |
 
-## 8. Evidencia de ejecución
+## 8. Evidencia de ejecución anterior
 
 ```text
 python -m pytest tests -q
@@ -143,7 +147,7 @@ Success: no issues found in 20 source files
 | Autenticación institucional | Clave compartida provisional | OIDC cuando exista especificación |
 | Guía oficial ausente | Requisitos externos no verificados | Incorporarla al repositorio |
 
-## 10. Conclusión
+## 10. Conclusión del incremento anterior
 
 El incremento cumple los requisitos funcionales de creación, unicidad,
 persistencia, errores, privacidad, límite de tasa y QR, con 96 pruebas verdes,
@@ -151,7 +155,7 @@ cobertura total de 93.17 %, `ruff`/`mypy --strict` limpios y documentación de
 arquitectura y procesos. Quedan pendientes explícitos de verificación manual,
 medición de latencia p95, migración formal, logging JSON, validación de
 Docker/Quarto y autenticación institucional; no se presentan como completados.
-## 11. Actualización 2026-11-05: cierre de pendientes técnicos
+## 11. Actualización anterior: cierre de pendientes técnicos
 
 Esta sección corrige los pendientes de las secciones 8 y 9 tras la verificación
 del incremento:
@@ -169,3 +173,32 @@ errores en 20 archivos. Persisten como pendientes la verificación manual US4
 cronometrada, la medición p95 (SC-004), la incorporación de la guía oficial y la
 ejecución de Docker/Quarto en un entorno que las tenga instaladas. El comando
 `docker compose config` se validó correctamente; el daemon no estaba en ejecución.
+
+## 12. Verificación vigente de la continuación — 2026-11-05
+
+| Comprobación | Resultado verificable |
+|--------------|------------------------|
+| Línea base recibida | Reproducida: 96 pruebas, 93,17 % |
+| Suite final | 115 pruebas aprobadas; cobertura 94,88 %; logging y limitador 100 % |
+| Ruff check / format check | Limpios sobre backend, tests, Alembic y scripts |
+| mypy strict | Sin errores en 20 archivos |
+| API real y frontend HTTP | Creación, QR decodificado, redirección, visitas, caducidad, desactivación, administración y reinicio con SQLite temporal |
+| Contrato y seguridad | Regresiones IPv6, clave no ASCII, errores 404/405/500, CORS, OpenAPI y límite compartido con la ruta heredada |
+| Logs | Rutas de plantilla, ID interno, sin texto SQL, IP, email ni Bearer en los casos probados |
+| Migración de copia real | 0001–0003; nueve filas conservadas y hash del original intacto |
+| Frontend JavaScript | Código real con DOM/red simulados: creación, imagen, descarga Blob y errores |
+| Git | Once artefactos retirados solo del índice; contenido local e historial intactos |
+| Portal y modelado | UTF-8, enlaces locales, YAML, XML BPMN y referencias pasan; recursos preparados para Quarto |
+| CI | Workflow preparado; sin push ni ejecución remota observada |
+
+Persisten como aceptación pendiente la descarga visual del PNG y US4/SC-007
+con persona no técnica: el control de Edge agotó la autorización de la
+herramienta. Docker y Quarto no están instalados; no se ejecutaron compose,
+build ni render actuales. La prueba HTTP local de latencia está en el informe;
+no acredita SC-004 visual ni carga concurrente. La guía oficial, la revisión
+humana de privacidad y la ratificación formal de Spec Kit siguen pendientes.
+
+La constitución se leyó y se conserva sin enmendar ni atribuirle aprobaciones.
+El paquete 002 incorpora sus artefactos de planificación faltantes. Las
+aclaraciones y tareas del mantenimiento están en
+`specs/001-create-short-link/verification-2026-11-05.md`.

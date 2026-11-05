@@ -16,12 +16,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import models, schemas, services, utils
 from .api import v1_router
-from .api.deps import get_rate_limiter
+from .api.deps import enforce_create_rate_limit, get_rate_limiter
 from .api.envelope import error_envelope, request_language, success_envelope
-from .api.schemas import HealthEnvelope
+from .api.schemas import ErrorEnvelope, HealthEnvelope
 from .config import get_settings
 from .database import Base, engine, ensure_schema, get_db
 from .errors import DomainError
@@ -61,16 +62,6 @@ _cors_origins = [
 ] or ["*"]
 _allow_any_origin = "*" in _cors_origins
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[origin for origin in _cors_origins if origin != "*"],
-    allow_origin_regex=".*" if _allow_any_origin else None,
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["X-Request-Id"],
-)
-
 app.state.rate_limiter = FixedWindowRateLimiter(
     max_requests=settings.rate_limit_max,
     window_seconds=settings.rate_limit_window_seconds,
@@ -85,9 +76,11 @@ async def add_request_context(
 
     from uuid import uuid4
 
-    request_id = (request.headers.get("X-Request-Id") or uuid4().hex)[:128]
+    server_request_id = uuid4().hex
+    request_id = (request.headers.get("X-Request-Id") or server_request_id)[:128]
     request.state.request_id = request_id
-    token = set_request_id(request_id)
+    # El identificador recibido puede contener PII; solo se refleja al cliente.
+    token = set_request_id(server_request_id)
     started_at = perf_counter()
     status_code = 500
     response: Response | None = None
@@ -95,17 +88,21 @@ async def add_request_context(
         response = await call_next(request)
         status_code = response.status_code
         response.headers["X-Request-Id"] = request_id
+        response.headers["X-Log-Request-Id"] = server_request_id
         return response
-    except Exception:
-        logger.exception(
+    except Exception as exc:
+        logger.error(
             "http_request_failed",
             extra={
                 "event": "http_request_failed",
                 "method": request.method,
-                "path": request.url.path,
+                "path": _log_route(request),
             },
         )
-        raise
+        response = await unhandled_exception_handler(request, exc)
+        response.headers["X-Request-Id"] = request_id
+        response.headers["X-Log-Request-Id"] = server_request_id
+        return response
     finally:
         duration_ms = round((perf_counter() - started_at) * 1000, 2)
         level = (
@@ -121,12 +118,19 @@ async def add_request_context(
             extra={
                 "event": "http_request_completed",
                 "method": request.method,
-                "path": request.url.path,
+                "path": _log_route(request),
                 "status_code": status_code,
                 "duration_ms": duration_ms,
             },
         )
         reset_request_id(token)
+
+
+def _log_route(request: Request) -> str:
+    """Registra la plantilla de ruta sin parámetros ni rutas arbitrarias."""
+
+    route = request.scope.get("route")
+    return str(getattr(route, "path", "<unmatched>"))
 
 
 def _validation_field(error: dict[str, Any]) -> str | None:
@@ -170,7 +174,6 @@ async def domain_error_handler(request: Request, exc: DomainError) -> JSONRespon
         extra={
             "event": "domain_error",
             "error_code": exc.code,
-            "field": exc.field,
         },
     )
     language = request_language(request)
@@ -215,8 +218,10 @@ async def validation_error_handler(
     return JSONResponse(status_code=422, content=body)
 
 
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> JSONResponse:
     """Mantiene el contrato heredado y usa envelope en ``/api/v1``."""
 
     if request.url.path.startswith(settings.api_prefix):
@@ -231,15 +236,19 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
             [{"code": "http_error", "message": detail, "field": None}],
             "http_error",
         )
-        return JSONResponse(status_code=exc.status_code, content=body)
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        return JSONResponse(
+            status_code=exc.status_code, content=body, headers=exc.headers
+        )
+    return JSONResponse(
+        status_code=exc.status_code, content={"detail": exc.detail}, headers=exc.headers
+    )
 
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Evita exponer trazas internas en la respuesta."""
 
-    logger.exception("Error no controlado en %s", request.url.path)
+    logger.error("unhandled_error", extra={"path": _log_route(request)})
     language = request_language(request)
     body = error_envelope(
         request,
@@ -255,7 +264,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     return JSONResponse(status_code=500, content=body)
 
 
-@app.get("/health", tags=["operaciones"], response_model=HealthEnvelope)
+@app.get(
+    "/health",
+    tags=["operaciones"],
+    response_model=HealthEnvelope,
+    responses={503: {"model": ErrorEnvelope}},
+)
 def health_check(
     request: Request, session: Session = Depends(get_db)
 ) -> dict[str, Any] | JSONResponse:
@@ -287,7 +301,12 @@ def health_check(
     )
 
 
-@app.post("/shorten", tags=["legacy"], summary="Crear enlace (compatibilidad)")
+@app.post(
+    "/shorten",
+    tags=["legacy"],
+    summary="Crear enlace (compatibilidad)",
+    dependencies=[Depends(enforce_create_rate_limit)],
+)
 def shorten_url(
     request: Request, url_data: schemas.URLBase, db: Session = Depends(get_db)
 ) -> dict[str, str]:
@@ -366,3 +385,14 @@ def root() -> dict[str, str]:
 
 
 app.include_router(v1_router, prefix=settings.api_prefix)
+
+# CORS envuelve también los errores controlados por el middleware de contexto.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin for origin in _cors_origins if origin != "*"],
+    allow_origin_regex=".*" if _allow_any_origin else None,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Request-Id", "X-Log-Request-Id"],
+)

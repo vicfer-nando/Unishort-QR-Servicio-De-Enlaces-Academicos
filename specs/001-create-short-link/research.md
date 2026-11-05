@@ -1,5 +1,13 @@
 # Research: Crear enlaces cortos (Feature 1)
 
+> Diseño inicial conservado como referencia histórica. La implementación vigente
+> usa `backend/app/`, tabla `short_urls` y Alembic `0001`–`0003`. El contrato
+> v1 vigente está en [contracts/v1-links.md](contracts/v1-links.md); el plan de
+> correcciones está en [verification-2026-11-05.md](verification-2026-11-05.md).
+> Las rutas `src/unishort`, tabla `short_links` y envelope inicial de las
+> secciones históricas no describen el sistema entregado.
+
+
 **Date**: 2026-10-21 | **Plan**: [plan.md](./plan.md) | **Spec**: [spec.md](./spec.md)
 
 Consolida las decisiones de la Fase 0. Resuelve los cuatro

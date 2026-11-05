@@ -36,6 +36,7 @@ Todas las respuestas JSON de `/api/v1` usan la misma envolvente:
 | Cabecera | Uso |
 |----------|-----|
 | `X-Request-Id` | Opcional al enviar; se conserva (máximo 128 caracteres) o se genera. Se devuelve en la respuesta. |
+| `X-Log-Request-Id` | Generado por el servidor y devuelto en la respuesta; identifica los logs sin registrar la cabecera arbitraria del cliente. |
 | `Accept-Language` | `es` (por defecto) o `en`. |
 | `X-Admin-API-Key` | Obligatoria en operaciones administrativas. |
 
@@ -197,8 +198,15 @@ FastAPI genera el esquema en `/openapi.json` y la documentación interactiva en
 `/docs`. El contrato implementado se verifica en
 `tests/contract/test_v1_links_contract.py`.
 
+Los errores `422` se describen mediante `ErrorEnvelope`, igual que su cuerpo
+real. Swagger ofrece autorización `APIKeyHeader` para `X-Admin-API-Key`.
+Las rutas desconocidas y métodos no permitidos bajo `/api/v1` usan envelope
+`http_error`; el `405` conserva `Allow`. Los errores internos conservan CORS,
+`X-Request-Id` y `X-Log-Request-Id`, sin detalles internos.
+
 ## Registro de cambios
 
 | Versión | Fecha | Cambio |
 |---------|-------|--------|
 | 1.0.0 | 2026-11-05 | Contrato inicial de la API versionada: creación, consulta, listado, actualización, desactivación, métricas y QR. |
+| 1.0.1 | 2026-11-05 | Correcciones de errores 404/405/422/500, cabecera adicional de logs y documentación de seguridad OpenAPI; API sigue en 1.0.0. |
