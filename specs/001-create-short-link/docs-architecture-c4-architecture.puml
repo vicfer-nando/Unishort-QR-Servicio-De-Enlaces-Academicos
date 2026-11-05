@@ -1,0 +1,14 @@
+@startuml C4_Elements
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(usuario, "Usuario UNL", "Docente o estudiante que desea acortar un enlace académico.")
+System_Boundary(unishort, "Sistema Unishort QR") {
+    Container(web_app, "Aplicación Web / Swagger UI", "HTML/JS / OpenAPI", "Interfaz donde el usuario interactúa y envía peticiones HTTP.")
+    Container(api_backend, "API Backend REST", "Python / FastAPI", "Procesa peticiones, genera códigos cortos, valida sintaxis y construye QR.")
+    ContainerDb(database, "Base de Datos", "SQLite / PostgreSQL", "Almacena la relación entre URL original, código corto y fechas.")
+}
+
+Rel(usuario, web_app, "Usa", "HTTPS")
+Rel(web_app, api_backend, "Realiza peticiones a", "JSON/HTTP")
+Rel(api_backend, database, "Lee y escribe en", "SQL / ORM")
+@enduml
