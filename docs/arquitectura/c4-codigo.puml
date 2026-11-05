@@ -1,0 +1,136 @@
+@startuml UniShortQR-C4-Codigo
+' Diagrama C4 nivel 4 (código) de UniShort QR.
+' Renderizar con PlantUML: plantuml docs/arquitectura/c4-codigo.puml
+
+title UniShort QR - C4 Nivel 4 (clases y relaciones relevantes)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "backend.app.api" {
+  class "v1.py" as V1 <<APIRouter>> {
+    +create_link()
+    +list_links()
+    +get_link()
+    +get_link_stats()
+    +update_link()
+    +deactivate_link()
+    +get_link_qr()
+  }
+  class "schemas.py" as Schemas {
+    +CreateLinkRequest
+    +UpdateLinkRequest
+    +LinkData
+    +LinkEnvelope
+    +ErrorItem
+  }
+  class "deps.py" as Deps {
+    +enforce_create_rate_limit()
+    +require_admin()
+  }
+  class "envelope.py" as Envelope {
+    +success_envelope()
+    +error_envelope()
+    +response_meta()
+  }
+}
+
+package "backend.app" {
+  class "services.py" as Services {
+    +create_short_link()
+    +get_link_or_raise()
+    +ensure_link_usable()
+    +resolve_link_for_redirect()
+    +record_click()
+    +update_link_state()
+    +list_links()
+    +link_to_data()
+    +database_is_healthy()
+  }
+  class "domain.py" as Domain {
+    +validate_destination_url()
+    +generate_short_code()
+    +normalize_expiration()
+    +is_expired()
+    +build_short_url()
+  }
+  class "repository.py" as Repository {
+    +create_link()
+    +get_by_code()
+    +list_links()
+    +count_links()
+    +increment_click_count()
+    +update_link()
+  }
+  class "models.ShortURL" as ShortURL {
+    +id: Integer
+    +short_code: String(16) <<unique>>
+    +original_url: String(2048)
+    +created_at: DateTime
+    +is_active: Boolean
+    +expires_at: DateTime
+    +click_count: Integer
+  }
+  class "errors.DomainError" as DomainError {
+    +code: str
+    +status_code: int
+    +message_key: str
+    +field: str
+  }
+  class "rate_limit.FixedWindowRateLimiter" as Limiter {
+    +check(key): bool
+    +retry_after(key): int
+    +reset(key)
+  }
+  class "qr.generate_qr_png" as QR {
+    +generate_qr_png(content): bytes
+  }
+  class "config.Settings" as Settings {
+    +database_url: str
+    +base_url: str
+    +admin_api_key: str
+    +rate_limit_max: int
+    +short_code_length: int
+  }
+  class "main.py" as Main {
+    +app: FastAPI
+    +domain_error_handler()
+    +validation_error_handler()
+    +health_check()
+    +shorten_url() <<legacy>>
+    +redirect_to_url() <<legacy>>
+  }
+}
+
+Main --> V1 : include_router(prefix="/api/v1")
+Main --> Main : registra handlers
+V1 --> Schemas : valida
+V1 --> Services : invoca
+V1 --> Deps : protege/limita
+V1 --> QR : genera PNG
+V1 --> Envelope : compone respuesta
+Deps --> Limiter : usa
+Deps --> Settings : lee clave
+Services --> Domain : reglas puras
+Services --> Repository : persistencia
+Services --> Settings : base_url
+Services --> DomainError : lanza
+Repository --> ShortURL : mapea
+Repository --> DomainError : lanza PersistenceError
+Main --> Services : redirección heredada
+Main --> ShortURL : endpoints heredados
+Main --> Envelope : errores v1
+Schemas --> DomainError : envelope de errores
+
+note right of Domain
+  No importa FastAPI ni SQLAlchemy.
+  Funciones puras y deterministas.
+end note
+
+note bottom of ShortURL
+  Sin IP, User-Agent, cookies ni
+  identificadores personales.
+end note
+
+@enduml

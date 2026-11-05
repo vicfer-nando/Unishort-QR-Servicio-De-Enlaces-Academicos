@@ -1,0 +1,75 @@
+---
+title: "Procesos BPMN"
+---
+
+## Proceso modelado
+
+Creación de un enlace corto, generación del QR y redirección al destino. El
+modelo usa BPMN 2.0.2 con tres carriles: usuario académico, API y servicio QR.
+
+- Análisis: [`docs/procesos/analisis-bpmn.md`](../docs/procesos/analisis-bpmn.md)
+- XML BPMN: [`docs/procesos/creacion-enlace.bpmn`](../docs/procesos/creacion-enlace.bpmn)
+
+## Flujo principal
+
+```{mermaid}
+flowchart LR
+    S([Inicio]) --> U1[Introducir URL]
+    U1 --> V[Validar solicitud]
+    V --> D{¿URL válida?}
+    D -- No --> E1[Error de validación] --> F1([Fin error])
+    D -- Sí --> R[Aplicar reglas]
+    R --> G[Generar código]
+    G --> C{¿Código libre?}
+    C -- No, reintentar --> G
+    C -- Sí --> P[Persistir enlace]
+    P --> PP{¿Persistencia OK?}
+    PP -- No --> E2[Revertir y error] --> F2([Fin error])
+    PP -- Sí --> Q[Generar QR]
+    Q --> L[Entregar enlace y QR]
+    L --> A[Acceder por enlace o QR]
+    A --> X[Resolver código]
+    X --> US{¿Activo y vigente?}
+    US -- No --> E3[410 no disponible] --> F3([Fin error])
+    US -- Sí --> K[Registrar clic]
+    K --> RD[Redirigir 307]
+    RD --> OK([Fin exitoso])
+```
+
+## Participantes
+
+| Carril | Actividades |
+|--------|-------------|
+| Usuario académico | Introducir URL, recibir enlace, acceder por enlace o QR. |
+| API UniShort QR | Validar, aplicar reglas, generar código, persistir, resolver, registrar clic y redirigir. |
+| Servicio QR | Generar el PNG y entregarlo. |
+
+## Decisiones del proceso
+
+| Compuerta | Condición | Resultado |
+|-----------|-----------|-----------|
+| ¿URL válida? | Esquema, host, longitud y credenciales | Continúa o error 4xx. |
+| ¿Código libre? | Unicidad en base de datos | Persiste o reintenta (máx. 10). |
+| ¿Persistencia correcta? | Commit confirmado | Genera QR o revierte. |
+| ¿Enlace utilizable? | `is_active` y `expires_at` | Redirige o responde 410. |
+
+## Excepciones cubiertas
+
+- URL vacía, malformada, con esquema no permitido, con credenciales o demasiado
+  larga.
+- Colisión de código no resuelta.
+- Fallo de base de datos con rollback.
+- Código inexistente, enlace desactivado o caducado.
+- Límite de creación superado.
+- Operación administrativa sin credencial válida.
+
+## Correspondencia con el código
+
+| Elemento BPMN | Código |
+|---------------|--------|
+| Validar | `backend/app/domain.py`, `api/schemas.py` |
+| Generar código | `backend/app/domain.py`, `repository.py` |
+| Persistir | `backend/app/repository.py` |
+| Generar QR | `backend/app/qr.py` |
+| Resolver y redirigir | `backend/app/main.py`, `services.py` |
+| Errores | `backend/app/errors.py`, `i18n.py`, `main.py` |

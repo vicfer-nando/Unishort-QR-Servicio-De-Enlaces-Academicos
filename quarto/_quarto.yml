@@ -1,0 +1,45 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "UniShort QR"
+  description: "Portal técnico del incremento de la Evaluación Sumativa 1"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Inicio
+      - href: requisitos.qmd
+        text: Requisitos
+      - href: arquitectura.qmd
+        text: Arquitectura
+      - href: procesos.qmd
+        text: Procesos
+      - href: api.qmd
+        text: API
+      - href: pruebas.qmd
+        text: Pruebas
+      - href: entrega.qmd
+        text: Entrega
+  sidebar:
+    style: docked
+    contents:
+      - index.qmd
+      - requisitos.qmd
+      - arquitectura.qmd
+      - procesos.qmd
+      - api.qmd
+      - pruebas.qmd
+      - entrega.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    lang: es
+    code-copy: true
+    code-overflow: wrap
+
+execute:
+  enabled: false

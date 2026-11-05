@@ -257,3 +257,55 @@ Task: "Implement URL validation in src/unishort/domain/url.py"          (T023)
   `feat(short-link): add code generation (001)`)
 - Parar en cada checkpoint para validar la historia de forma independiente
 - Cambios que afecten a la privacidad (T049) requieren revisión de dos personas
+
+---
+
+## Estado real de implementación (2026-11-05)
+
+Esta sección reconcilia el plan original con el incremento entregado. El plan
+asumía un paquete `src/unishort/`; la implementación real vive en
+`backend/app/` para conservar el MVP existente. Las casillas originales no se
+marcan porque varias tareas cambiaron de ruta o de alcance.
+
+**Resultado de la suite:** `python -m pytest tests -q` → **84 passed**. Cobertura
+total: **92.78 %** (`rate_limit.py` al 100 %). `ruff check`, `ruff format
+--check` y `mypy --strict` pasan sin errores sobre `backend/` y `tests/`.
+
+| Bloque | Estado | Evidencia / diferencia |
+|--------|--------|------------------------|
+| T001-T002 estructura y `pyproject.toml` | Parcial | Se usó `backend/app/` y `requirements.txt`; `pyproject.toml` ya existe con metadatos, dependencias y configuración de herramientas. Falta `requirements.lock`. |
+| T003 ruff/mypy/pytest en `pyproject.toml` | Implementado | `pyproject.toml`: `testpaths`, `pythonpath`, cobertura con umbral 85 %, `ruff` y `mypy --strict`. |
+| T004 `.gitignore` | Implementado | `.gitignore` raíz. |
+| T005 `requirements.lock` | Pendiente | Dependencias fijadas en `backend/requirements*.txt`. |
+| T006 README | Implementado | `README.md` raíz. |
+| T007 Settings | Implementado | `backend/app/config.py`. |
+| T008 catálogo i18n | Implementado | `backend/app/i18n.py` (`es`/`en`). |
+| T009 logging JSON estructurado | Pendiente | Se usa `logging` estándar; el access log de Uvicorn se desactiva en la guía. |
+| T010 excepciones de dominio | Implementado | `backend/app/errors.py`. |
+| T011 sesión y engine | Implementado | `backend/app/database.py`. |
+| T012 modelo | Implementado con diferencia | `backend/app/models.py`: tabla `short_urls`, PK `id`, `short_code` único (no PK). |
+| T013 Alembic | Pendiente | Se usa `ensure_schema()` aditivo e idempotente; no se recrea la BD. |
+| T014 `X-Request-Id` | Implementado | Middleware en `backend/app/main.py` y `api/envelope.py`. |
+| T015 envelope y handlers | Implementado | `backend/app/api/envelope.py`, `backend/app/main.py`. |
+| T016 pureza del dominio | Parcial | `domain.py` no importa FastAPI/SQLAlchemy; no hay prueba dedicada de `sys.modules`. |
+| T017 smoke test | Implementado | `tests/test_basic.py`, `tests/contract/test_v1_links_contract.py`. |
+| US1 creación | Implementado | `POST /api/v1/links` con 201 y código de 7; endpoints heredados conservados. |
+| US1 pruebas | Implementado | `tests/contract/test_v1_links_contract.py`, `tests/integration/test_persistence_restart.py`. |
+| US2 errores y límite | Implementado | `errors.py`, `i18n.py`, `rate_limit.py`, `api/deps.py`; pruebas de contrato y unitarias. |
+| US2 fallo de persistencia | Implementado a nivel de repositorio | `tests/unit/test_repository.py::test_persistence_failure_rolls_back_and_raises`. |
+| US3 unicidad y colisión | Implementado | Reintento hasta 10 en `repository.py`; `tests/unit/test_domain.py::test_ten_thousand_codes_are_unique`, `tests/unit/test_repository.py`. |
+| US4 navegador | Parcial | README y frontend listos; falta registrar una verificación manual cronometrada. |
+| T044-T048 ADR | Implementado con otra numeración | `docs/adr/0001` a `0005`. |
+| T049 privacidad | Parcial | `tests/security/test_admin_access.py` verifica ausencia de columnas PII; no se auditó un log real. |
+| T050 cobertura y estáticos | Implementado | Cobertura 92.78 % (umbral 85 %; `rate_limit.py` 100 %); `ruff check` y `ruff format --check` limpios; `mypy --strict` sin errores en 19 archivos. |
+| T051 contratos reconciliados | Implementado | `contracts/shorten.md`, `contracts/errors.md`, `contracts/v1-links.md`, `specs/002-generate-qr/contracts/qr.md`. |
+| T052 definición de terminado | Parcial | Documentación y contratos alineados; quedan T005, T009, T013, la verificación manual US4 y la validación de Docker/Quarto en un entorno con esas herramientas. |
+
+### Pendientes explícitos
+
+1. Generar `requirements.lock` desde un entorno limpio.
+2. Implementar logging JSON estructurado sin datos personales.
+3. Añadir migración Alembic formal para producción.
+4. Registrar la verificación manual en navegador (US4/SC-007).
+5. Incorporar la guía oficial de la Evaluación Sumativa 1 como fuente externa.
+6. Ejecutar `docker compose config`/`up` y `quarto render` en un equipo con Docker y Quarto instalados; aquí no están disponibles.

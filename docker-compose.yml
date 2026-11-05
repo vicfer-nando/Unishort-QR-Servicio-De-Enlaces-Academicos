@@ -1,0 +1,40 @@
+name: unishort-qr
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      UNISHORT_DATABASE_URL: sqlite:////data/unishort.db
+      UNISHORT_BASE_URL: ${UNISHORT_BASE_URL:-http://localhost:8000}
+      UNISHORT_ADMIN_API_KEY: ${UNISHORT_ADMIN_API_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - unishort-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  frontend:
+    image: nginx:1.27-alpine
+    ports:
+      - "5500:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  unishort-data:

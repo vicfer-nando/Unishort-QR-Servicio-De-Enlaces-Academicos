@@ -1,0 +1,32 @@
+# Entornos y cachés
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Configuración local y secretos
+.env
+.env.*
+!.env.example
+
+# Base de datos local (el archivo existente se conserva en el repositorio)
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Quarto
+quarto/_site/
+quarto/.quarto/
+
+# Sistema operativo
+Thumbs.db
+.DS_Store

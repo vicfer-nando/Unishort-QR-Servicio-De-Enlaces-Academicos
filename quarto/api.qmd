@@ -1,0 +1,100 @@
+---
+title: "API"
+---
+
+## Superficie
+
+| Método | Ruta | Autenticación | Descripción |
+|--------|------|---------------|-------------|
+| POST | `/api/v1/links` | No | Crear enlace. |
+| GET | `/api/v1/links/{code}` | No | Consultar metadatos. |
+| GET | `/api/v1/links` | Admin | Listar con paginación. |
+| PATCH | `/api/v1/links/{code}` | Admin | Cambiar estado o expiración. |
+| DELETE | `/api/v1/links/{code}` | Admin | Desactivar lógicamente. |
+| GET | `/api/v1/links/{code}/stats` | Admin | Métricas agregadas. |
+| GET | `/api/v1/links/{code}/qr` | No | PNG del QR. |
+| GET | `/s/{code}` | No | Redirección `307`. |
+| POST | `/shorten` | No | Compatibilidad heredada. |
+| GET | `/health` | No | Disponibilidad. |
+
+Documentación interactiva: <http://127.0.0.1:8000/docs>.
+
+## Envelope
+
+```json
+{
+  "success": true,
+  "message": "Enlace corto creado correctamente.",
+  "data": {
+    "short_code": "abc2345",
+    "short_url": "http://localhost:8000/s/abc2345",
+    "original_url": "https://www.example.com/articulo?lang=es",
+    "qr_url": "http://localhost:8000/api/v1/links/abc2345/qr",
+    "created_at": "2026-11-05T12:00:00+00:00",
+    "expires_at": null,
+    "is_active": true,
+    "click_count": 0,
+    "status": "active"
+  },
+  "errors": [],
+  "meta": {
+    "request_id": "5f0c...",
+    "api_version": "1.0.0",
+    "language": "es"
+  }
+}
+```
+
+## Crear enlace
+
+```powershell
+$body = @{ url = "https://www.example.com/articulo?lang=es" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/api/v1/links" `
+  -ContentType "application/json" -Body $body
+```
+
+- `201` con `LinkData`.
+- Código de 7 caracteres, sin deduplicación.
+- `expires_at` opcional y futuro.
+- Límite de 60 creaciones por 60 s.
+
+## QR
+
+```powershell
+Invoke-WebRequest -Uri "http://localhost:8000/api/v1/links/abc2345/qr" -OutFile "qr.png"
+```
+
+El PNG codifica `http://localhost:8000/s/abc2345`, nunca la URL original.
+
+## Administración
+
+```powershell
+$headers = @{ "X-Admin-API-Key" = "dev-admin-cambiar-en-produccion" }
+Invoke-RestMethod -Uri "http://localhost:8000/api/v1/links" -Headers $headers
+```
+
+- Sin cabecera: `401`.
+- Clave incorrecta: `403`.
+- Sin clave configurada: `503`.
+
+## Errores
+
+| Estado | Códigos |
+|--------|---------|
+| `400` | `invalid_url`, `invalid_scheme`, `invalid_host`, `embedded_credentials` |
+| `401` | `admin_authentication_required` |
+| `403` | `admin_forbidden` |
+| `404` | `link_not_found` |
+| `409` | `collision_unresolved` |
+| `410` | `link_inactive`, `link_expired` |
+| `422` | `invalid_payload`, `url_too_long`, `invalid_expiration` |
+| `429` | `rate_limit_exceeded` |
+| `500` | `persistence_failure`, `internal_error` |
+| `503` | `admin_not_configured`, `service_unavailable` |
+
+## Contratos
+
+- [`v1-links.md`](../specs/001-create-short-link/contracts/v1-links.md)
+- [`shorten.md`](../specs/001-create-short-link/contracts/shorten.md)
+- [`errors.md`](../specs/001-create-short-link/contracts/errors.md)
+- [`qr.md`](../specs/002-generate-qr/contracts/qr.md)

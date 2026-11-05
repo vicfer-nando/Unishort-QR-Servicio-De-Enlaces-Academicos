@@ -1,0 +1,74 @@
+---
+title: "Requisitos y trazabilidad"
+---
+
+## Fuente de requisitos
+
+Los requisitos provienen de la especificación
+[`001-create-short-link`](../specs/001-create-short-link/spec.md) y de la
+especificación de QR [`002-generate-qr`](../specs/002-generate-qr/spec.md).
+
+> La guía oficial de la Evaluación Sumativa 1 no está incorporada al
+> repositorio. Se registra como fuente externa pendiente; no se inventan
+> requisitos que no aparezcan en las especificaciones.
+
+## Requisitos funcionales de creación
+
+| ID | Requisito | Estado | Evidencia |
+|----|-----------|--------|-----------|
+| FR-001 | Crear un enlace corto a partir de una URL | Cumplido | `POST /api/v1/links` |
+| FR-002 | Aceptar solo URL absolutas `http`/`https`, host válido y ≤ 2048 | Cumplido | `backend/app/domain.py`, pruebas de contrato |
+| FR-003 | Código único por enlace | Cumplido | Restricción única + reintentos |
+| FR-004 | Persistencia duradera tras reinicio | Cumplido | `tests/integration/test_persistence_restart.py` |
+| FR-005 | Devolver código, URL corta y URL original | Cumplido | Envelope `LinkData` |
+| FR-006 | Rechazar entradas inválidas sin crear enlace | Cumplido | Pruebas de contrato y unitarias |
+| FR-007 | No confirmar un guardado fallido | Cumplido | Rollback en `repository.py`; prueba unitaria |
+| FR-008 | No recopilar datos personales del creador | Cumplido | Sin columnas PII; prueba de seguridad |
+| FR-009 | Limitar el ritmo de creación de forma efímera | Cumplido | `rate_limit.py`, 60/60 s |
+| FR-010 | Crear y comprobar desde el navegador | Parcial | Frontend y README listos; falta verificación manual cronometrada |
+
+## Requisitos funcionales de QR
+
+| ID | Requisito | Estado | Evidencia |
+|----|-----------|--------|-----------|
+| FR-001 | Endpoint `GET /api/v1/links/{code}/qr` | Cumplido | `api/v1.py` |
+| FR-002 | Respuesta PNG válida | Cumplido | `tests/integration/test_qr.py` |
+| FR-003 | Codificar exactamente la URL corta | Cumplido | Decodificación con OpenCV |
+| FR-004 | QR decodificable por lector estándar | Cumplido | Prueba automatizada |
+| FR-005 | `404`/`410` sin imagen | Cumplido | Pruebas de QR y contrato |
+| FR-006 | No incrementar clics al consultar el QR | Cumplido | `resolve_link_for_redirect` solo valida |
+| FR-007 | Sin consulta al destino ni PII | Cumplido | Generación local |
+| FR-008 | Tamaño y borde configurables | Cumplido | `UNISHORT_QR_BOX_SIZE`, `UNISHORT_QR_BORDER` |
+| FR-009 | Frontend muestra y descarga el QR | Cumplido | `frontend/index.html` |
+
+## Historias de usuario
+
+| Historia | Prioridad | Estado | Prueba principal |
+|----------|-----------|--------|------------------|
+| US1 Crear enlace válido | P1 | Implementada | `tests/contract/test_v1_links_contract.py` |
+| US2 Errores claros | P2 | Implementada | `tests/unit/test_domain.py`, contrato |
+| US3 Código propio y colisiones | P3 | Implementada | `tests/unit/test_repository.py`, 10 000 códigos |
+| US4 Verificación en navegador | P4 | Parcial | Frontend + README; falta registro manual |
+| QR US1 Obtener QR | P1 | Implementada | `tests/integration/test_qr.py` |
+| QR US2 Usar QR en frontend | P2 | Implementada | `frontend/index.html` |
+
+## Criterios de éxito
+
+| ID | Criterio | Evidencia | Estado |
+|----|----------|-----------|--------|
+| SC-001 | URL válida produce enlace en la primera petición | Contrato | Cumplido en pruebas |
+| SC-002 | 10 000 códigos sin repetición | `test_ten_thousand_codes_are_unique` | Cumplido |
+| SC-003 | URL inválida recibe 4xx sin enlace | Contrato | Cumplido |
+| SC-004 | Resultado en menos de 1 s (p95) | No medido formalmente | Pendiente de medición |
+| SC-005 | Enlaces sobreviven al reinicio | Prueba de reinicio | Cumplido |
+| SC-006 | Escenarios cubiertos por pruebas | Suite | Parcial: US4 manual pendiente |
+| SC-007 | Persona no técnica en menos de 10 min | No registrado | Pendiente de verificación |
+| SC-008 | Cero datos personales almacenados | Prueba de esquema | Cumplido a nivel de esquema |
+
+## Fuera de alcance
+
+- Autenticación institucional OIDC.
+- Roles múltiples y panel administrativo web.
+- PostgreSQL desplegado.
+- Métricas por visitante o eventos individuales.
+- Analítica con datos personales.

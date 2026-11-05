@@ -1,0 +1,70 @@
+---
+title: "Pruebas y evidencias"
+---
+
+## Resultado actual
+
+```text
+python -m pytest tests -q
+84 passed
+```
+
+Fecha de la última ejecución: **2026-11-05**. Las pruebas usan SQLite aislada,
+no acceden a la red pública y no dependen de datos reales.
+
+## Organización de la suite
+
+| Carpeta | Cobertura funcional |
+|---------|---------------------|
+| `tests/unit` | Dominio, configuración, limitador, repositorio, colisiones y rollback. |
+| `tests/integration` | QR decodificable, administración, métricas y persistencia tras reinicio. |
+| `tests/contract` | Envelope, estados HTTP, localización, rate limit y OpenAPI. |
+| `tests/security` | Autenticación administrativa y ausencia de columnas PII. |
+| `tests/test_basic.py`, `tests/test_shorten.py` | Compatibilidad del MVP heredado. |
+
+## Casos destacados
+
+- **10 000 códigos**: `test_ten_thousand_codes_are_unique` verifica que no se
+  repite ningún código en una ronda de 10 000.
+- **Colisión**: un generador inyectado repite un código existente; el
+  repositorio reintenta sin sobrescribir y agota con `409`.
+- **Persistencia**: un fallo de SQLAlchemy revierte la transacción y lanza
+  `PersistenceError`.
+- **Reinicio**: el enlace sigue resolviendo después de reconstruir el engine
+  sobre el mismo archivo SQLite.
+- **QR**: OpenCV decodifica el PNG y confirma que el contenido es la URL corta.
+- **Privacidad**: la inspección del esquema no encuentra columnas de IP,
+  User-Agent, cookies ni sesión.
+
+## Comandos
+
+```powershell
+python -m pytest tests -q
+python -m pytest tests --cov=backend/app --cov-report=term-missing
+python -m ruff check backend tests
+python -m ruff format --check backend tests
+python -m mypy backend/app
+```
+
+## Estado de calidad
+
+| Control | Estado |
+|---------|--------|
+| Suite funcional | Verde: 84 pruebas. |
+| Cobertura medida | 92.78 % total; umbral 85 % superado; `rate_limit.py` 100 %. |
+| `ruff check` | `All checks passed!` |
+| `ruff format --check` | 31 archivos ya formateados. |
+| `mypy --strict` | Sin errores en 19 archivos fuente. |
+| Verificación manual en navegador | Pendiente de registrar. |
+
+> La cobertura y los análisis estáticos se midieron el 2026-11-05. Docker y
+> Quarto no están instalados en este entorno, por lo que sus entregables no se
+> ejecutaron aquí; los pendientes restantes están en la página de entrega y en
+> `tasks.md`.
+
+## Evidencia reproducible
+
+1. Instalar dependencias de `backend/requirements-dev.txt`.
+2. Ejecutar `python -m pytest tests -q` desde la raíz.
+3. Abrir `/docs` y crear un enlace.
+4. Descargar el QR y comprobar que apunta a `/s/{code}`.

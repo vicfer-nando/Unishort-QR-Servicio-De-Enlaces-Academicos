@@ -384,6 +384,38 @@
             overflow-wrap: anywhere;
         }
 
+        .qr-block {
+            align-items: center;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 18px;
+            margin-top: 16px;
+            padding-top: 16px;
+        }
+
+        .qr-image {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            height: 148px;
+            image-rendering: pixelated;
+            padding: 6px;
+            width: 148px;
+        }
+
+        .qr-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .qr-download {
+            color: var(--unl-green-deep);
+            font-size: 0.88rem;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
         .service-note {
             border-top: 1px solid var(--border-strong);
             color: var(--muted);
@@ -543,12 +575,20 @@
                         <span class="result-label">URL original</span>
                         <div class="original-url" id="originalUrl"></div>
                     </div>
+                    <div class="qr-block" id="qrBlock">
+                        <img class="qr-image" id="qrImage" alt="Código QR del enlace corto" width="148" height="148">
+                        <div class="qr-meta">
+                            <span class="result-label">Código QR</span>
+                            <p class="field-help">El QR apunta a la URL corta, no directamente al destino original.</p>
+                            <a class="qr-download" id="qrDownload" href="#" download="unishort-qr.png">Descargar PNG</a>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
 
         <section class="service-note" aria-label="Alcance del servicio">
-            <p><strong>Proyecto académico.</strong> La creación de enlaces está disponible en esta versión. La generación de códigos QR se incorporará en una etapa posterior.</p>
+            <p><strong>Proyecto académico.</strong> Creación de enlaces cortos, redirección y generación de códigos QR disponibles en este incremento. La administración de enlaces requiere la clave configurada en el backend.</p>
         </section>
     </main>
 
@@ -561,6 +601,7 @@
 
     <script>
         const API_BASE_URL = 'http://localhost:8000';
+        const API_PREFIX = '/api/v1';
 
         async function shortenUrl() {
             const urlInput = document.getElementById('urlInput');
@@ -596,7 +637,7 @@
             resultDiv.classList.remove('show');
 
             try {
-                const response = await fetch(`${API_BASE_URL}/shorten`, {
+                const response = await fetch(`${API_BASE_URL}${API_PREFIX}/links`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -609,23 +650,45 @@
                     return;
                 }
 
-                let data;
+                let payload;
                 try {
-                    data = await response.json();
+                    payload = await response.json();
                 } catch (error) {
                     showMessage('El servidor devolvió una respuesta no válida. Inténtalo de nuevo.', 'error');
                     return;
                 }
 
-                if (!data || typeof data.short_url !== 'string' || typeof data.original_url !== 'string') {
+                if (!payload || payload.success !== true || !payload.data) {
+                    showMessage('La respuesta del servidor está incompleta. Inténtalo de nuevo.', 'error');
+                    return;
+                }
+
+                const data = payload.data;
+                if (typeof data.short_url !== 'string' || typeof data.original_url !== 'string') {
                     showMessage('La respuesta del servidor está incompleta. Inténtalo de nuevo.', 'error');
                     return;
                 }
 
                 document.getElementById('shortUrl').textContent = data.short_url;
                 document.getElementById('originalUrl').textContent = data.original_url;
+
+                const qrImage = document.getElementById('qrImage');
+                const qrDownload = document.getElementById('qrDownload');
+                if (typeof data.qr_url === 'string') {
+                    qrImage.src = data.qr_url;
+                    qrImage.alt = `Código QR del enlace ${data.short_url}`;
+                    qrDownload.href = data.qr_url;
+                    qrDownload.download = `unishort-${data.short_code}.png`;
+                    qrImage.style.display = '';
+                    qrDownload.style.display = '';
+                } else {
+                    qrImage.removeAttribute('src');
+                    qrImage.style.display = 'none';
+                    qrDownload.style.display = 'none';
+                }
+
                 resultDiv.classList.add('show');
-                showMessage('¡URL acortada correctamente!', 'success');
+                showMessage(payload.message || '¡URL acortada correctamente!', 'success');
             } catch (error) {
                 showMessage('No se pudo conectar con el servicio. Verifica que el backend esté en ejecución.', 'error');
             } finally {
@@ -644,6 +707,17 @@
 
             try {
                 const data = await response.json();
+
+                if (Array.isArray(data.errors) && data.errors.length > 0) {
+                    const firstError = data.errors[0];
+                    if (firstError && typeof firstError.message === 'string') {
+                        return firstError.message;
+                    }
+                }
+
+                if (typeof data.message === 'string' && data.message) {
+                    return data.message;
+                }
 
                 if (typeof data.detail === 'string') {
                     return data.detail;

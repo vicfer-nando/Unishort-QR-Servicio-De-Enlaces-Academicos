@@ -1,0 +1,76 @@
+---
+title: "Arquitectura"
+---
+
+## Vista de contexto (C1)
+
+```{mermaid}
+flowchart LR
+    U[Usuario académico] --> F[Frontend web]
+    A[Administrador DTI] --> API[API UniShort QR]
+    E[Docente evaluador] --> F
+    F --> API
+    API --> DB[(Base de datos)]
+    API -. futuro .-> ID[Identidad institucional OIDC]
+```
+
+## Vista de contenedores (C2)
+
+| Contenedor | Tecnología | Responsabilidad |
+|------------|------------|-----------------|
+| Frontend web | HTML, CSS, JavaScript | Crear enlaces, mostrar y descargar el QR. |
+| Backend API | Python 3.13, FastAPI, Uvicorn | Validar, persistir, redirigir, generar QR y métricas. |
+| Base de datos | SQLite (desarrollo) | Conservar enlaces, estado, expiración y contador. |
+| Proxy HTTPS | Nginx (futuro) | Terminación TLS y límite perimetral. |
+| Identidad institucional | OIDC (futuro) | Autenticación aprobada de administradores. |
+
+## Vista de componentes (C3)
+
+```{mermaid}
+flowchart TB
+    subgraph API[Backend FastAPI]
+        V1[API v1]
+        LEG[Compatibilidad heredada]
+        SCH[Esquemas Pydantic]
+        SRV[Casos de uso]
+        DOM[Dominio puro]
+        REP[Repositorio SQLAlchemy]
+        SEC[Control de acceso]
+        RL[Limitador efímero]
+        QR[Generador QR]
+    end
+    V1 --> SCH
+    V1 --> SRV
+    V1 --> SEC
+    V1 --> RL
+    V1 --> QR
+    LEG --> SRV
+    SRV --> DOM
+    SRV --> REP
+    REP --> DB[(SQLite)]
+    QR --> PNG[PNG en memoria]
+```
+
+## Decisiones de arquitectura
+
+| ADR | Decisión | Consecuencia principal |
+|-----|----------|------------------------|
+| [0001](../docs/adr/0001-fastapi-vs-django-rest-framework.md) | FastAPI en lugar de Django REST Framework | Se conserva el MVP y se evita una reescritura. |
+| [0002](../docs/adr/0002-sqlite-desarrollo-postgresql-futuro.md) | SQLite en desarrollo, PostgreSQL futuro | Migración aditiva; no se recrea la BD. |
+| [0003](../docs/adr/0003-generacion-codigo-corto.md) | Código de 7 caracteres sin ambigüedad con `secrets` | Menos errores de transcripción y colisiones. |
+| [0004](../docs/adr/0004-autenticacion-provisional-administrativa.md) | Clave administrativa provisional | Control de acceso real, sustituible por OIDC. |
+| [0005](../docs/adr/0005-api-versionada-envelope-errores.md) | `/api/v1`, envelope y errores localizados | Contrato estable y compatibilidad heredada. |
+
+## Diagramas fuente
+
+- Structurizr DSL (C1-C3): [`docs/arquitectura/unishort-c4.dsl`](../docs/arquitectura/unishort-c4.dsl)
+- PlantUML (C4 código): [`docs/arquitectura/c4-codigo.puml`](../docs/arquitectura/c4-codigo.puml)
+
+## Principios aplicados
+
+1. **Dominio puro:** `domain.py` no importa FastAPI ni SQLAlchemy.
+2. **Persistencia transaccional:** commit o rollback completo.
+3. **Privacidad por diseño:** sin IP, cookies, User-Agent ni eventos
+   individuales almacenados.
+4. **Compatibilidad:** los enlaces publicados siguen funcionando.
+5. **Configuración por entorno:** sin secretos ni dominios codificados.

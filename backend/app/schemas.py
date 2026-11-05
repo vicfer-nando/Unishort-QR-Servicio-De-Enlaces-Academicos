@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, ConfigDict, HttpUrl
 
 
 class URLBase(BaseModel):
@@ -9,5 +9,4 @@ class URLInfo(URLBase):
     short_code: str
     short_url: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
