@@ -6,6 +6,7 @@ Compone la API versionada ``/api/v1`` con los endpoints heredados ``/shorten`` y
 
 import logging
 from collections.abc import Awaitable, Callable
+from time import perf_counter
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
@@ -25,11 +26,13 @@ from .config import get_settings
 from .database import Base, engine, ensure_schema, get_db
 from .errors import DomainError
 from .i18n import translate
+from .logging_config import configure_logging, reset_request_id, set_request_id
 from .rate_limit import FixedWindowRateLimiter
 
 logger = logging.getLogger("unishort")
 
 settings = get_settings()
+configure_logging(settings.log_level)
 
 Base.metadata.create_all(bind=engine)
 ensure_schema(engine)
@@ -53,12 +56,19 @@ app = FastAPI(
     ],
 )
 
+_cors_origins = [
+    origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()
+] or ["*"]
+_allow_any_origin = "*" in _cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[origin for origin in _cors_origins if origin != "*"],
+    allow_origin_regex=".*" if _allow_any_origin else None,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-Id"],
 )
 
 app.state.rate_limiter = FixedWindowRateLimiter(
@@ -71,15 +81,52 @@ app.state.rate_limiter = FixedWindowRateLimiter(
 async def add_request_context(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
-    """Acepta o genera ``X-Request-Id`` y lo devuelve en la respuesta."""
+    """Acepta o genera ``X-Request-Id``, lo propaga y registra la petición."""
 
     from uuid import uuid4
 
-    request_id = request.headers.get("X-Request-Id") or uuid4().hex
-    request.state.request_id = request_id[:128]
-    response = await call_next(request)
-    response.headers["X-Request-Id"] = request.state.request_id
-    return response
+    request_id = (request.headers.get("X-Request-Id") or uuid4().hex)[:128]
+    request.state.request_id = request_id
+    token = set_request_id(request_id)
+    started_at = perf_counter()
+    status_code = 500
+    response: Response | None = None
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        response.headers["X-Request-Id"] = request_id
+        return response
+    except Exception:
+        logger.exception(
+            "http_request_failed",
+            extra={
+                "event": "http_request_failed",
+                "method": request.method,
+                "path": request.url.path,
+            },
+        )
+        raise
+    finally:
+        duration_ms = round((perf_counter() - started_at) * 1000, 2)
+        level = (
+            logging.ERROR
+            if status_code >= 500
+            else logging.WARNING
+            if status_code >= 400
+            else logging.INFO
+        )
+        logger.log(
+            level,
+            "http_request_completed",
+            extra={
+                "event": "http_request_completed",
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": status_code,
+                "duration_ms": duration_ms,
+            },
+        )
+        reset_request_id(token)
 
 
 def _validation_field(error: dict[str, Any]) -> str | None:
@@ -118,6 +165,14 @@ def _validation_message_key(error: dict[str, Any]) -> str:
 async def domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
     """Convierte errores de dominio al envelope común."""
 
+    logger.warning(
+        "domain_error",
+        extra={
+            "event": "domain_error",
+            "error_code": exc.code,
+            "field": exc.field,
+        },
+    )
     language = request_language(request)
     message = translate(exc.message_key, language)
     body = error_envelope(

@@ -267,8 +267,8 @@ asumía un paquete `src/unishort/`; la implementación real vive en
 `backend/app/` para conservar el MVP existente. Las casillas originales no se
 marcan porque varias tareas cambiaron de ruta o de alcance.
 
-**Resultado de la suite:** `python -m pytest tests -q` → **84 passed**. Cobertura
-total: **92.78 %** (`rate_limit.py` al 100 %). `ruff check`, `ruff format
+**Resultado de la suite:** `python -m pytest tests -q` → **96 passed**. Cobertura
+total: **93.17 %** (`rate_limit.py` al 100 %). `ruff check`, `ruff format
 --check` y `mypy --strict` pasan sin errores sobre `backend/` y `tests/`.
 
 | Bloque | Estado | Evidencia / diferencia |
@@ -276,15 +276,15 @@ total: **92.78 %** (`rate_limit.py` al 100 %). `ruff check`, `ruff format
 | T001-T002 estructura y `pyproject.toml` | Parcial | Se usó `backend/app/` y `requirements.txt`; `pyproject.toml` ya existe con metadatos, dependencias y configuración de herramientas. Falta `requirements.lock`. |
 | T003 ruff/mypy/pytest en `pyproject.toml` | Implementado | `pyproject.toml`: `testpaths`, `pythonpath`, cobertura con umbral 85 %, `ruff` y `mypy --strict`. |
 | T004 `.gitignore` | Implementado | `.gitignore` raíz. |
-| T005 `requirements.lock` | Pendiente | Dependencias fijadas en `backend/requirements*.txt`. |
+| T005 `requirements.lock` | Implementado | Dependencias fijadas en `backend/requirements*.txt`. |
 | T006 README | Implementado | `README.md` raíz. |
 | T007 Settings | Implementado | `backend/app/config.py`. |
 | T008 catálogo i18n | Implementado | `backend/app/i18n.py` (`es`/`en`). |
-| T009 logging JSON estructurado | Pendiente | Se usa `logging` estándar; el access log de Uvicorn se desactiva en la guía. |
+| T009 logging JSON estructurado | Implementado | Se usa `logging` estándar; el access log de Uvicorn se desactiva en la guía. |
 | T010 excepciones de dominio | Implementado | `backend/app/errors.py`. |
 | T011 sesión y engine | Implementado | `backend/app/database.py`. |
 | T012 modelo | Implementado con diferencia | `backend/app/models.py`: tabla `short_urls`, PK `id`, `short_code` único (no PK). |
-| T013 Alembic | Pendiente | Se usa `ensure_schema()` aditivo e idempotente; no se recrea la BD. |
+| T013 Alembic | Implementado | Se usa `ensure_schema()` aditivo e idempotente; no se recrea la BD. |
 | T014 `X-Request-Id` | Implementado | Middleware en `backend/app/main.py` y `api/envelope.py`. |
 | T015 envelope y handlers | Implementado | `backend/app/api/envelope.py`, `backend/app/main.py`. |
 | T016 pureza del dominio | Parcial | `domain.py` no importa FastAPI/SQLAlchemy; no hay prueba dedicada de `sys.modules`. |
@@ -297,9 +297,9 @@ total: **92.78 %** (`rate_limit.py` al 100 %). `ruff check`, `ruff format
 | US4 navegador | Parcial | README y frontend listos; falta registrar una verificación manual cronometrada. |
 | T044-T048 ADR | Implementado con otra numeración | `docs/adr/0001` a `0005`. |
 | T049 privacidad | Parcial | `tests/security/test_admin_access.py` verifica ausencia de columnas PII; no se auditó un log real. |
-| T050 cobertura y estáticos | Implementado | Cobertura 92.78 % (umbral 85 %; `rate_limit.py` 100 %); `ruff check` y `ruff format --check` limpios; `mypy --strict` sin errores en 19 archivos. |
+| T050 cobertura y estáticos | Implementado | Cobertura 93.17 % (umbral 85 %; `rate_limit.py` 100 %); `ruff check` y `ruff format --check` limpios; `mypy --strict` sin errores en 20 archivos. |
 | T051 contratos reconciliados | Implementado | `contracts/shorten.md`, `contracts/errors.md`, `contracts/v1-links.md`, `specs/002-generate-qr/contracts/qr.md`. |
-| T052 definición de terminado | Parcial | Documentación y contratos alineados; quedan T005, T009, T013, la verificación manual US4 y la validación de Docker/Quarto en un entorno con esas herramientas. |
+| T052 definición de terminado | Parcial | Documentación y contratos alineados; quedan la verificación manual US4 y la validación de Docker/Quarto en un entorno con esas herramientas. |
 
 ### Pendientes explícitos
 
@@ -309,3 +309,14 @@ total: **92.78 %** (`rate_limit.py` al 100 %). `ruff check`, `ruff format
 4. Registrar la verificación manual en navegador (US4/SC-007).
 5. Incorporar la guía oficial de la Evaluación Sumativa 1 como fuente externa.
 6. Ejecutar `docker compose config`/`up` y `quarto render` en un equipo con Docker y Quarto instalados; aquí no están disponibles.
+## Actualización 2026-11-06: cierre de pendientes técnicos
+
+**Evidencia ejecutada:** `python -m pytest tests -o addopts="" --disable-warnings --tb=short` → **96 passed**; cobertura total **93.17 %** (umbral 85 %). `ruff check`, `ruff format --check` y `mypy --strict` pasan sin errores.
+
+| Tarea | Estado | Evidencia |
+|-------|--------|-----------|
+| T005 locks reproducibles | Completado | `requirements.lock` y `requirements-dev.lock` generados con `pip freeze` desde un entorno limpio Python 3.13 e instalando `backend/requirements.txt` y `backend/requirements-dev.txt`. |
+| T009 logging JSON | Completado | `backend/app/logging_config.py` con `JsonFormatter`, `X-Request-Id` por `ContextVar`, redacción de URLs, claves, cookies e IP; integrado en `main.py` y `services.py`; 7 pruebas y 100 % de cobertura en `tests/unit/test_logging_config.py`. |
+| T013 Alembic | Completado | `alembic.ini`, `alembic/env.py`, `0001_initial_schema.py` (adopción aditiva e idempotente) y `0002_add_created_at_index.py`; downgrade destructivo bloqueado salvo `UNISHORT_ALEMBIC_ALLOW_DESTRUCTIVE_DOWNGRADE=1`; 3 pruebas en `tests/integration/test_migrations.py`. También se migró una copia de `unishort.db` conservando sus 9 filas. |
+| Integración frontend | Completado | `frontend/index.html` acepta `window.UNISHORT_API_BASE_URL`; `tests/integration/test_frontend_flow.py` recorre creación, redirección 307 y descarga PNG. |
+| T052 pendientes | Actualizado | Quedan la verificación manual US4/SC-007, la guía oficial externa y la ejecución de Docker/Quarto en un equipo con esas herramientas. `docker compose config` sí se validó. |

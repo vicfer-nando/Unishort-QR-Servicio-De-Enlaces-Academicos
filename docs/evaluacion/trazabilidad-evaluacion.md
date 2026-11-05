@@ -109,23 +109,23 @@
 
 ```text
 python -m pytest tests -q
-84 passed in 1.23s
+96 passed in 5.34s
 
 python -m pytest tests --cov=backend/app --cov-report=term-missing
-84 passed; cobertura total 92.78 % (umbral 85 %; rate_limit.py 100 %)
+96 passed; cobertura total 93.17 % (umbral 85 %; rate_limit.py 100 %)
 
 python -m ruff check backend tests
 All checks passed!
 
 python -m ruff format --check backend tests
-31 files already formatted
+35 files already formatted
 
 python -m mypy backend/app   # strict=true en pyproject.toml
-Success: no issues found in 19 source files
+Success: no issues found in 20 source files
 ```
 
 - Fecha: 2026-11-05.
-- Entorno: Python 3.13.14, pytest 9.1.1, ruff 0.6.9, mypy 1.11.2.
+- Entorno: Python 3.13.17, pytest 9.1.1, ruff 0.6.9, mypy 1.11.2.
 - Base de datos de pruebas: SQLite aislada.
 - Sin acceso a red pública en las pruebas.
 - Docker y Quarto no están instalados en este entorno: los archivos se entregan,
@@ -146,8 +146,26 @@ Success: no issues found in 19 source files
 ## 10. Conclusión
 
 El incremento cumple los requisitos funcionales de creación, unicidad,
-persistencia, errores, privacidad, límite de tasa y QR, con 84 pruebas verdes,
-cobertura total de 92.78 %, `ruff`/`mypy --strict` limpios y documentación de
+persistencia, errores, privacidad, límite de tasa y QR, con 96 pruebas verdes,
+cobertura total de 93.17 %, `ruff`/`mypy --strict` limpios y documentación de
 arquitectura y procesos. Quedan pendientes explícitos de verificación manual,
 medición de latencia p95, migración formal, logging JSON, validación de
 Docker/Quarto y autenticación institucional; no se presentan como completados.
+## 11. Actualización 2026-11-05: cierre de pendientes técnicos
+
+Esta sección corrige los pendientes de las secciones 8 y 9 tras la verificación
+del incremento:
+
+| Antes pendiente | Estado actual | Evidencia |
+|-----------------|---------------|-----------|
+| Migración Alembic | Completado | `alembic.ini`, `alembic/env.py`, migraciones `0001` y `0002`, `tests/integration/test_migrations.py`; adopción con datos conservados y downgrade protegido. También se migró una copia de `unishort.db` conservando sus 9 filas. |
+| Logging JSON | Completado | `backend/app/logging_config.py`, integración en `main.py`/`services.py`, `tests/unit/test_logging_config.py` al 100 %; sin IP, User-Agent, cookies, claves ni URL de destino. |
+| Dependencias reproducibles | Completado | `requirements.lock` y `requirements-dev.lock` generados con `pip freeze` desde un entorno limpio Python 3.13. |
+| Flujo del frontend | Completado en pruebas automatizadas | `window.UNISHORT_API_BASE_URL` y `tests/integration/test_frontend_flow.py` (creación, redirección 307 y PNG). |
+
+**Evidencia de ejecución actualizada:** 96 pruebas aprobadas, cobertura total
+93.17 %, `ruff check` y `ruff format --check` limpios, `mypy --strict` sin
+errores en 20 archivos. Persisten como pendientes la verificación manual US4
+cronometrada, la medición p95 (SC-004), la incorporación de la guía oficial y la
+ejecución de Docker/Quarto en un entorno que las tenga instaladas. El comando
+`docker compose config` se validó correctamente; el daemon no estaba en ejecución.

@@ -4,6 +4,7 @@ La capa de servicios orquesta validación, persistencia y composición de la
 respuesta pública. No conoce detalles de FastAPI.
 """
 
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -21,6 +22,8 @@ from .domain import (
 )
 from .errors import LinkExpiredError, LinkInactiveError, LinkNotFoundError
 from .models import ShortURL
+
+logger = logging.getLogger("unishort.services")
 
 __all__ = ["build_short_url", "repository"]
 
@@ -112,13 +115,22 @@ def create_short_link(
     normalized_expiration = (
         normalize_expiration(expires_at) if expires_at is not None else None
     )
-    return repository.create_link(
+    link = repository.create_link(
         session=session,
         original_url=original_url,
         expires_at=normalized_expiration,
         code_length=config.short_code_length,
         code_generator=code_generator,
     )
+    logger.info(
+        "link_created",
+        extra={
+            "event": "link_created",
+            "short_code": link.short_code,
+            "expires_at": _iso_utc(link.expires_at),
+        },
+    )
+    return link
 
 
 def get_link_or_raise(session: Session, short_code: str) -> ShortURL:
@@ -162,7 +174,15 @@ def record_click(session: Session, short_code: str) -> None:
         repository.increment_click_count(session, short_code)
     except Exception:
         # La disponibilidad de la redirección prevalece sobre la métrica.
+        logger.warning(
+            "link_click_record_failed",
+            extra={"event": "link_click_record_failed", "short_code": short_code},
+        )
         return
+    logger.info(
+        "link_click_recorded",
+        extra={"event": "link_click_recorded", "short_code": short_code},
+    )
 
 
 def update_link_state(
@@ -197,13 +217,23 @@ def update_link_state(
     normalized_expiration = expires_at
     if update_expiration and expires_at is not None:
         normalized_expiration = normalize_expiration(expires_at)
-    return repository.update_link(
+    updated = repository.update_link(
         session=session,
         link=link,
         is_active=is_active,
         expires_at=normalized_expiration,
         update_expiration=update_expiration,
     )
+    logger.info(
+        "link_updated",
+        extra={
+            "event": "link_updated",
+            "short_code": updated.short_code,
+            "is_active_changed": is_active is not None,
+            "expiration_changed": update_expiration,
+        },
+    )
+    return updated
 
 
 def list_links(

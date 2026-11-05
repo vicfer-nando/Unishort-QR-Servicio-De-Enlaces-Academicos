@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     admin_api_key:
         Clave provisional de administración. Si está vacía, los endpoints
         administrativos quedan deshabilitados con ``503``.
+    log_level:
+        Nivel mínimo del registro estructurado JSON.
+    cors_origins:
+        Orígenes permitidos separados por coma; ``*`` conserva el modo abierto
+        del prototipo académico.
     rate_limit_max / rate_limit_window_seconds:
         Límite efímero de creación de enlaces. La clave del limitador nunca se
         persiste.
@@ -55,6 +60,8 @@ class Settings(BaseSettings):
     database_url: str = Field(default_factory=_default_database_url)
     base_url: str = "http://localhost:8000"
     admin_api_key: Optional[str] = None
+    log_level: str = "INFO"
+    cors_origins: str = "*"
     rate_limit_enabled: bool = True
     rate_limit_max: int = Field(default=60, ge=1)
     rate_limit_window_seconds: int = Field(default=60, ge=1, le=60)

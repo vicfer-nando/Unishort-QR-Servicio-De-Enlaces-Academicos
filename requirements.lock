@@ -1,0 +1,27 @@
+﻿# Generated from a clean Python 3.13 venv:
+# py -3.13 -m venv <temp>; <temp>\Scripts\python.exe -m pip install -r backend\requirements.txt; <temp>\Scripts\python.exe -m pip freeze
+alembic==1.13.3
+annotated-types==0.8.0
+anyio==4.16.0
+click==8.5.0
+colorama==0.4.6
+fastapi==0.115.0
+h11==0.16.0
+httptools==0.9.0
+idna==3.20
+Mako==1.4.3
+MarkupSafe==3.0.4
+pillow==12.3.0
+pydantic==2.9.2
+pydantic-settings==2.5.2
+pydantic_core==2.23.4
+python-dotenv==1.2.4
+python-multipart==0.0.12
+PyYAML==6.0.3
+qrcode==8.0
+SQLAlchemy==2.0.35
+starlette==0.38.6
+typing_extensions==4.16.0
+uvicorn==0.30.6
+watchfiles==1.3.0
+websockets==17.4

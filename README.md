@@ -50,6 +50,10 @@ python -m pip install --upgrade pip
 python -m pip install -r backend\requirements-dev.txt
 ```
 
+Para reproducir exactamente las versiones verificadas, use los locks generados
+desde un entorno limpio: `requirements.lock` (servicio) y
+`requirements-dev.lock` (servicio + pruebas y herramientas).
+
 Si no se usa entorno virtual, basta con instalar las dependencias en el Python
 global. Para ejecutar solo el servicio no hacen falta las dependencias de
 prueba: `backend\requirements.txt`.
@@ -70,9 +74,12 @@ los valores. **No confirmes secretos reales.**
 | `UNISHORT_RATE_LIMIT_WINDOW_SECONDS` | `60` | Ventana en segundos (máximo 60). |
 | `UNISHORT_SHORT_CODE_LENGTH` | `7` | Longitud del código en v1. |
 | `UNISHORT_QR_BOX_SIZE` | `10` | Tamaño de módulo del QR. |
+| `UNISHORT_LOG_LEVEL` | `INFO` | Nivel del registro estructurado JSON. |
+| `UNISHORT_CORS_ORIGINS` | `*` | Orígenes permitidos separados por coma. |
 
 No se almacenan direcciones IP, cookies, User-Agent ni datos personales de los
-visitantes. El limitador usa la IP solo como clave efímera en memoria.
+visitantes. El limitador usa la IP solo como clave efímera en memoria y el
+registro JSON redacta URLs de destino, claves, cookies y agentes de usuario.
 
 ## 5. Ejecución del backend
 
@@ -98,6 +105,25 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
 > `--no-access-log` evita que el registro de acceso de Uvicorn incluya la IP del
 > cliente, conforme al principio de privacidad del proyecto.
 
+### Migraciones de base de datos
+
+Alembic adopta de forma aditiva la base existente, sin borrar enlaces:
+
+```powershell
+python -m alembic upgrade head
+```
+
+Las migraciones crean la tabla si no existe, agregan solo las columnas o
+índices faltantes y conservan los datos de `unishort.db`. El `downgrade` elimina
+la tabla y exige confirmación explícita:
+
+```powershell
+$env:UNISHORT_ALEMBIC_ALLOW_DESTRUCTIVE_DOWNGRADE = "1"
+python -m alembic downgrade base
+```
+
+No defina esa variable en producción salvo que acepte perder los datos.
+
 ## 6. Frontend
 
 En otra terminal:
@@ -109,7 +135,10 @@ py -m http.server 5500
 
 Abre <http://localhost:5500>. El frontend llama a
 `http://localhost:8000/api/v1` y muestra también el QR descargable. Si cambias
-el host o el puerto del backend, ajusta `API_BASE_URL` en `frontend/index.html`.
+el host o el puerto del backend, define `window.UNISHORT_API_BASE_URL` antes de
+cargar el script o ajusta el valor por defecto en `frontend/index.html`. La API
+expone `X-Request-Id` para rastrear cada solicitud sin registrar datos
+personales.
 
 ## 7. API
 
@@ -196,17 +225,19 @@ python -m ruff format --check backend tests
 python -m mypy backend/app
 ```
 
-Resultado de la última ejecución (2026-11-05): **84 passed**, cobertura total
-**92.78 %** (umbral 85 %), `ruff` limpio y `mypy --strict` sin errores.
+Resultado de la última ejecución (2026-11-05): **96 passed**, cobertura total
+**93.17 %** (umbral 85 %), `ruff` limpio y `mypy --strict` sin errores.
 
 Las pruebas usan SQLite aislada, aíslan la dependencia `get_db`, no acceden a la
 red pública y verifican contratos, códigos HTTP, reglas de negocio, QR
-decodificable y control de acceso.
+decodificable, logging JSON, migraciones Alembic, flujo del frontend y control
+de acceso.
 
 Carpetas:
 
-- `tests/unit`: dominio, configuración, repositorio y limitador.
-- `tests/integration`: QR, administración, métricas y persistencia tras reinicio.
+- `tests/unit`: dominio, configuración, repositorio, limitador y logging.
+- `tests/integration`: QR, administración, métricas, migraciones, frontend y
+  persistencia tras reinicio.
 - `tests/contract`: envelope, estados HTTP y OpenAPI.
 - `tests/security`: autenticación administrativa y ausencia de columnas PII.
 
@@ -231,8 +262,8 @@ No se incluyen secretos reales. La configuración de producción (HTTPS,
 PostgreSQL, proxy) queda documentada pero fuera de este incremento.
 
 > Los archivos `Dockerfile`, `docker-compose.yml` y `.dockerignore` están
-> incluidos, pero Docker no estaba instalado en el entorno de desarrollo usado,
-> por lo que `docker compose up` no se ejecutó aquí.
+> incluidos. `docker compose config` se validó correctamente, pero el daemon de
+> Docker no estaba en ejecución, por lo que `docker compose up` no se ejecutó.
 
 ## 10. Documentación
 
@@ -254,7 +285,8 @@ PostgreSQL, proxy) queda documentada pero fuera de este incremento.
 - La guía oficial de la Evaluación Sumativa 1 no está incorporada al
   repositorio; los requisitos usados provienen del enunciado de la actividad y
   quedan registrados como fuente externa pendiente.
-- Docker y Quarto no se ejecutaron en el entorno de desarrollo usado; los
-  archivos se entregan sin validación de arranque/render en ese entorno.
+- `docker compose config` se validó, pero el daemon de Docker no estaba en
+  ejecución; Quarto no está instalado. No se validó el arranque ni el render en
+  este entorno.
 - La latencia p95 (SC-004) y la prueba manual con usuario no técnico (US4) no
   están medidas/registradas todavía.
