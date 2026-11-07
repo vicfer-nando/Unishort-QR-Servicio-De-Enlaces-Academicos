@@ -8,9 +8,9 @@ Los requisitos provienen de la especificación
 [`001-create-short-link`](sources/specs/001-create-short-link/spec.md) y de la
 especificación de QR [`002-generate-qr`](sources/specs/002-generate-qr/spec.md).
 
-> La guía oficial de la Evaluación Sumativa 1 no está incorporada al
-> repositorio. Se registra como fuente externa pendiente; no se inventan
-> requisitos que no aparezcan en las especificaciones.
+> El PDF oficial de 11 páginas está en la raíz y se cotejó el 2026-11-06.
+> La [auditoría vigente](auditoria.qmd) relaciona sus cinco criterios con las
+> especificaciones y evidencias; no atribuye aprobación institucional ni docente.
 
 ## Requisitos funcionales de creación
 
@@ -68,16 +68,37 @@ especificación de QR [`002-generate-qr`](sources/specs/002-generate-qr/spec.md)
 ## Fuera de alcance
 
 - Autenticación institucional OIDC.
-- Roles múltiples y panel administrativo web.
+- Roles múltiples e identidad institucional. El panel web se implementa en el
+  incremento [003](sources/specs/003-admin-dashboard/spec.md) con clave provisional.
 - PostgreSQL desplegado.
 - Métricas por visitante o eventos individuales.
 - Analítica con datos personales.
 
-## Revisión vigente del 2026-11-05
+## Requisitos administrativos y no funcionales
 
-La ejecución HTTP real, el JavaScript con DOM simulado, los límites y las
-correcciones están documentados en [el informe de verificación](sources/docs/evaluacion/verificacion-2026-11-05.md).
-La comprobación visual de Edge agotó la autorización de la herramienta.
-Docker y Quarto no están disponibles; no se acredita build ni render.
-El p95 HTTP local fue 7,71 ms al crear y 6,31 ms al redirigir (100 muestras,
-concurrencia 1); no sustituye SC-004 visual ni SC-007 con persona no técnica.
+| Alcance | Requisito y aceptación | Evidencia |
+|---|---|---|
+| Admin acceso | Comprobar clave contra API protegida; no persistirla; logout descarta memoria; 401/403/503 claros. | spec 003; tests/security; admin.test.mjs. |
+| Admin resumen | Obtener totales y visitas con SQL agregado, sin descargar todos los registros. | test_admin_queries.py; contrato admin. |
+| Admin lista | Buscar código/URL, filtrar estados y paginar con límites validados. | tests/integration/test_admin_dashboard.py. |
+| Admin gestión | Confirmar desactivación/reactivación y fecha; backend valida estado/expiración. | tests contract/integration y JS. |
+| RNF seguridad | No exponer secretos, DOM seguro, autorización backend, validación y CORS explícito. | Seguridad, pruebas y ADR 0004. |
+| RNF calidad | Separación por capas, pruebas con BD temporal, cobertura ≥85 %, Ruff/mypy. | pyproject.toml; workflows; resultados. |
+| RNF operación | Persistencia/migraciones, health, logging seguro y reproducción desde fuentes. | Alembic, pruebas de reinicio, guía Windows. |
+
+## Spec Kit, clarificaciones y trazabilidad
+
+- [Constitution](sources/constitution.md).
+- [Creación: spec](sources/specs/001-create-short-link/spec.md),
+  [plan](sources/specs/001-create-short-link/plan.md), [tasks](sources/specs/001-create-short-link/tasks.md).
+- [QR: spec](sources/specs/002-generate-qr/spec.md),
+  [plan](sources/specs/002-generate-qr/plan.md), [tasks](sources/specs/002-generate-qr/tasks.md).
+- [Panel: spec](sources/specs/003-admin-dashboard/spec.md),
+  [plan](sources/specs/003-admin-dashboard/plan.md), [tasks](sources/specs/003-admin-dashboard/tasks.md).
+- [Preguntas y clarificaciones documentadas](sources/docs/evaluacion/clarificaciones-y-desviaciones.md).
+- [Trazabilidad de requisitos a capas/pruebas](sources/docs/evaluacion/contexto-y-trazabilidad.md).
+
+La existencia de artefactos no prueba ejecución de comandos Spec Kit, firmas o
+aprobaciones. Se distinguen clarificaciones retrospectivas de revisión formal.
+SC-004 visual y SC-007 siguen pendientes; la auditoría midió HTTP loopback, que
+no sustituye esos criterios. [Resultados efectivos](paquete/resultados-verificacion.qmd).

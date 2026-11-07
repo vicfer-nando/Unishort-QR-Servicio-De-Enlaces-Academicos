@@ -7,9 +7,10 @@ de dominio. Las escrituras se confirman o revierten completas.
 from datetime import datetime
 from typing import Callable, List, Optional
 
-from sqlalchemy import func, select, update
+from sqlalchemy import case, func, or_, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.elements import ColumnElement
 
 from .domain import generate_short_code, utc_now
 from .errors import CollisionExhaustedError, PersistenceError
@@ -105,22 +106,104 @@ def get_by_code(session: Session, short_code: str) -> Optional[ShortURL]:
     return session.scalar(select(ShortURL).where(ShortURL.short_code == short_code))
 
 
-def list_links(session: Session, limit: int = 50, offset: int = 0) -> List[ShortURL]:
+def _link_filters(
+    q: Optional[str], status: Optional[str], now: datetime
+) -> list[ColumnElement[bool]]:
+    """Compone filtros parametrizados; los comodines del usuario son literales."""
+
+    filters: list[ColumnElement[bool]] = []
+    if q is not None:
+        filters.append(
+            or_(
+                func.lower(ShortURL.short_code).contains(q.lower(), autoescape=True),
+                func.lower(ShortURL.original_url).contains(q.lower(), autoescape=True),
+            )
+        )
+    if status == "inactive":
+        filters.append(ShortURL.is_active.is_(False))
+    elif status == "expired":
+        filters.extend([ShortURL.is_active.is_(True), ShortURL.expires_at <= now])
+    elif status == "active":
+        filters.extend(
+            [
+                ShortURL.is_active.is_(True),
+                or_(ShortURL.expires_at.is_(None), ShortURL.expires_at > now),
+            ]
+        )
+    return filters
+
+
+def list_links(
+    session: Session,
+    limit: int = 50,
+    offset: int = 0,
+    q: Optional[str] = None,
+    status: Optional[str] = None,
+    now: Optional[datetime] = None,
+) -> List[ShortURL]:
     """Devuelve enlaces ordenados del más reciente al más antiguo."""
 
     statement = (
         select(ShortURL)
-        .order_by(ShortURL.created_at.desc())
+        .where(*_link_filters(q, status, now or utc_now()))
+        .order_by(ShortURL.created_at.desc(), ShortURL.id.desc())
         .offset(max(offset, 0))
         .limit(max(1, limit))
     )
     return list(session.scalars(statement).all())
 
 
-def count_links(session: Session) -> int:
-    """Cuenta el total de enlaces almacenados."""
+def count_links(
+    session: Session,
+    q: Optional[str] = None,
+    status: Optional[str] = None,
+    now: Optional[datetime] = None,
+) -> int:
+    """Cuenta coincidencias antes de aplicar la paginación."""
 
-    return int(session.scalar(select(func.count(ShortURL.id))) or 0)
+    statement = select(func.count(ShortURL.id)).where(
+        *_link_filters(q, status, now or utc_now())
+    )
+    return int(session.scalar(statement) or 0)
+
+
+def get_admin_stats(session: Session, now: datetime) -> dict[str, int]:
+    """Obtiene cinco totales globales en una consulta, sin cargar registros.
+
+    Parameters
+    ----------
+    session:
+        Sesión aislada de la petición.
+    now:
+        Referencia UTC para clasificar caducidad con prioridad de inactividad.
+
+    Returns
+    -------
+    dict[str, int]
+        Total, estados mutuamente excluyentes y visitas de todos los enlaces.
+    """
+
+    inactive = ShortURL.is_active.is_(False)
+    expired = ShortURL.is_active.is_(True) & (ShortURL.expires_at <= now)
+    active = ShortURL.is_active.is_(True) & or_(
+        ShortURL.expires_at.is_(None), ShortURL.expires_at > now
+    )
+    row = session.execute(
+        select(
+            func.count(ShortURL.id).label("total_links"),
+            func.coalesce(func.sum(case((active, 1), else_=0)), 0).label(
+                "active_links"
+            ),
+            func.coalesce(func.sum(case((inactive, 1), else_=0)), 0).label(
+                "inactive_links"
+            ),
+            func.coalesce(func.sum(case((expired, 1), else_=0)), 0).label(
+                "expired_links"
+            ),
+            func.coalesce(func.sum(ShortURL.click_count), 0).label("total_visits"),
+        )
+    ).one()
+    return {str(key): int(value) for key, value in row._mapping.items()}
 
 
 def increment_click_count(session: Session, short_code: str) -> None:

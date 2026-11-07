@@ -6,8 +6,8 @@
 
 ## Contexto
 
-El servicio existente usa SQLite (`unishort.db`) y la evaluación menciona
-PostgreSQL. No hay infraestructura de producción ni credenciales aprobadas. El
+El servicio existente usa SQLite (`unishort.db`) y el PDF oficial incluye
+PostgreSQL en el stack de referencia (pp. 3–4). No hay infraestructura de producción ni credenciales aprobadas. El
 incremento debe conservar los datos existentes y evitar una migración
 destructiva.
 
@@ -40,9 +40,10 @@ destructiva.
 
 ## Consecuencias
 
-- Debe añadirse `psycopg` y una migración formal (Alembic) al desplegar
-  PostgreSQL.
+- Antes de desplegar PostgreSQL deben añadirse su controlador y pruebas sobre
+  ese motor. Alembic formal ya existe con migraciones 0001–0003 para SQLite.
 - El contador de clics agregado y los índices actuales son compatibles con
   ambos motores.
-- La ruta `ensure_schema` es una medida de compatibilidad del incremento; una
-  migración versionada sustituirá ese mecanismo en producción.
+- La ruta `ensure_schema` es una medida de compatibilidad aditiva. El arranque
+  Docker ya ejecuta Alembic; se deberá revisar el SQL específico de compatibilidad
+  antes de afirmar portabilidad completa a otro motor. PostgreSQL no está probado.

@@ -1,0 +1,60 @@
+---
+title: "Auditoría final de la rúbrica"
+---
+
+## Fuente oficial y alcance
+
+Esta página conserva el cierre de la auditoría anterior. Para los cambios del
+paquete de entrega, resultados más recientes y pendientes de publicación, consultar
+el [dossier final](paquete/README.qmd) y su [registro](paquete/resultados-verificacion.qmd).
+
+Se leyó el texto completo de las 11 páginas del
+[PDF oficial](sources/Asignaci%C3%B3n_Y_Rubrica_Evaluaci%C3%B3n_Sumativa_1.pdf)
+el 2026-11-06. Los cinco criterios oficiales tienen máximo 2 puntos cada uno.
+La [matriz completa](sources/docs/evaluacion/auditoria-final-rubrica.md) incluye
+requisito, estado, implementación, pruebas, documentos, evidencia docente y riesgo.
+La revisión conserva FastAPI y las bases existentes; no reconstruye el sistema.
+
+## Resultado técnico orientativo
+
+| Criterio | Estimación / 2 | Estado principal |
+|---|---:|---|
+| Especificación, trazabilidad y arquitectura | 1,7 | Fuentes reconciliadas; validación visual de modelos y puertas humanas pendientes. |
+| Funcionamiento y API | 1,9 | Flujo real probado, OpenAPI generado; compatibilidad legacy documentada. |
+| Seguridad y calidad | 1,8 | Clave en memoria y backend protegido; repr de configuración corregido. |
+| Pruebas y verificación | 1,8 | 148 Python y 19 JS aprobadas; 95,22 % de cobertura; aceptación visual pendiente. |
+| Documentación, despliegue y contribución | 1,3 | PR/CI publicados verificados; Quarto/Docker y publicación de cambios actuales pendientes. |
+| Total conservador | **8,5 / 10** | No es una calificación oficial ni garantiza crédito individual. |
+
+Los decimales son orientación técnica y no sustituyen los descriptores 0/1/2.
+La calificación definitiva pertenece al docente. No se declara 10/10 mientras
+queden entregables sin publicar ni pruebas/actos humanos sin evidencia.
+
+## Evidencia al cerrar la auditoría previa
+
+- 148 pruebas Python aprobadas, cero fallidas, cobertura backend 95,22 %, umbral 85 %.
+- 19 pruebas JavaScript del panel y regresión pública aprobadas; DOM/red simulados.
+- Ruff y mypy aprobados; copia de fuentes sin BD/.env/venv comprobada.
+- HTTP real y QR decodificado; migración de copia con nueve filas e integridad OK.
+- [OpenAPI del código actual](sources/openapi.json), exportado con SQLite temporal.
+- [PR #2](https://github.com/vicfer-nando/Unishort-QR-Servicio-De-Enlaces-Academicos/pull/2)
+  fusionado y aprobado: contribución previa real de Martina.
+- [Actions para 543701c](https://github.com/vicfer-nando/Unishort-QR-Servicio-De-Enlaces-Academicos/actions/runs/42091635246)
+  aprobado. No contiene el panel ni auditoría sin commit; falta CI del SHA final.
+
+## Cierre y responsabilidad del equipo
+
+El texto inicial «PDF ausente» quedó superado al incorporarse el archivo. No se
+inventan comandos Spec Kit, aprobaciones, contribuciones ni demostraciones.
+El navegador se volvió a consultar el 2026-11-06 y el host de acceso sigue sin
+estar disponible; no se afirma una prueba visual actual.
+
+- [Windows, Quarto/Docker y demostración](sources/docs/evaluacion/ejecucion-windows-y-entrega.md).
+- [Amenazas, controles y límites](sources/docs/evaluacion/seguridad-y-riesgos.md).
+- [Declaración de IA y contribución individual](sources/docs/evaluacion/uso-ia-y-contribucion.md).
+- [Clarificaciones y diferencias](sources/docs/evaluacion/clarificaciones-y-desviaciones.md).
+- [Estrategia de ramas y evidencia Git](sources/docs/CONTRIBUTING.md).
+
+La entrega exige enlazar repositorio y documentación generada, demostrar el
+producto y aportar evidencia individual. Faltan revisión humana, autorización de
+commit/push/PR, render/publicación del portal y completar las reflexiones personales.

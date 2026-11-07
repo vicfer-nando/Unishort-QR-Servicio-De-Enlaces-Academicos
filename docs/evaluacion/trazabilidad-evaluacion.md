@@ -4,6 +4,10 @@
 **Fecha:** 2026-11-05
 **Alcance:** incremento funcional sobre el MVP existente.
 
+**Actualización vigente 2026-11-06:** [matriz oficial](auditoria-final-rubrica.md),
+PDF completo cotejado, panel administrativo y 148 pruebas Python/19 JS aprobadas,
+cobertura 95,22 %. Los resultados fechados 2026-11-05 de este archivo son antecedentes.
+
 ## 1. Fuentes de requisitos
 
 La evidencia vigente de la continuación se recoge en la sección 12 y en
@@ -16,11 +20,10 @@ las secciones 8–11 son antecedentes del incremento anterior.
 | Especificación de QR | `specs/002-generate-qr/spec.md` | Disponible |
 | Contratos | `specs/001-create-short-link/contracts/`, `specs/002-generate-qr/contracts/` | Disponible |
 | Constitución del proyecto | `.specify/memory/constitution.md` | Disponible |
-| Guía oficial de la Evaluación Sumativa 1 | Fuera del repositorio | **Pendiente de incorporar** |
+| Guía oficial de la Evaluación Sumativa 1 | PDF de la raíz, 11 páginas | Incorporado y leído íntegramente el 2026-11-06 |
 
-> No se inventan requisitos de la guía oficial. Los requisitos trazados son los
-> que aparecen en las especificaciones del repositorio y en el enunciado
-> registrado por el equipo. La guía oficial queda como fuente externa pendiente.
+> No se inventan requisitos ni aprobaciones. La matriz de auditoría final enlazada
+> arriba prevalece para el estado actual y explica diferencias frente al PDF.
 
 ## 2. Requisitos funcionales y evidencia
 
@@ -145,7 +148,7 @@ Success: no issues found in 20 source files
 | Migración Alembic | Producción sin migraciones formales | Añadir en siguiente incremento |
 | Logging JSON | Observabilidad parcial | Implementar sin PII |
 | Autenticación institucional | Clave compartida provisional | OIDC cuando exista especificación |
-| Guía oficial ausente | Requisitos externos no verificados | Incorporarla al repositorio |
+| Guía oficial incorporada | Texto de 11 páginas cotejado en esta continuación | Revisión docente y entrega individual aún pendientes |
 
 ## 10. Conclusión del incremento anterior
 

@@ -1,5 +1,6 @@
 """Valida UTF-8, enlaces locales, YAML y referencias BPMN sin afirmar render."""
 
+import argparse
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -12,6 +13,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     """Revisa fuentes públicas; exige preparar recursos Quarto previamente."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--allow-unrendered-diagrams", action="store_true")
+    args = parser.parse_args()
+    expected_diagrams = {
+        "C1-Contexto.svg",
+        "C2-Contenedores.svg",
+        "C3-Componentes-backend.svg",
+        "C4-Codigo.svg",
+        "bpmn-Diagram_Create.svg",
+        "bpmn-Diagram_QR.svg",
+        "bpmn-Diagram_Redirect.svg",
+        "bpmn-Diagram_Admin.svg",
+        "manifest.json",
+    }
     files = [ROOT / "README.md", ROOT / ".specify/memory/constitution.md"]
     for directory in ("docs", "specs", "quarto"):
         files.extend(
@@ -34,7 +49,14 @@ def main():
                     continue
                 target = unquote(link.split("#")[0])
                 if target and not (path.parent / target).exists():
-                    broken.append(f"{path.relative_to(ROOT)} -> {link}")
+                    resolved = (path.parent / target).resolve()
+                    allowed = (
+                        args.allow_unrendered_diagrams
+                        and resolved.parent == (ROOT / "quarto/diagrams").resolve()
+                        and resolved.name in expected_diagrams
+                    )
+                    if not allowed:
+                        broken.append(f"{path.relative_to(ROOT)} -> {link}")
     if broken:
         raise SystemExit("Enlaces locales inexistentes:\n" + "\n".join(broken))
     xml = ET.parse(ROOT / "docs/procesos/creacion-enlace.bpmn")
@@ -54,6 +76,7 @@ def main():
         ROOT / "quarto/_quarto.yml",
         ROOT / "docker-compose.yml",
         ROOT / ".github/workflows/quality.yml",
+        ROOT / ".github/workflows/documentation.yml",
     ):
         assert isinstance(yaml.safe_load(path.read_text(encoding="utf-8")), dict)
     print(
@@ -62,6 +85,10 @@ def main():
     print(
         "No equivale a render Quarto/PlantUML/Structurizr ni validación BPMN por XSD."
     )
+    if args.allow_unrendered_diagrams:
+        print(
+            "Modo fuentes: existencia de los nueve derivados de diagramas no exigida."
+        )
 
 
 if __name__ == "__main__":

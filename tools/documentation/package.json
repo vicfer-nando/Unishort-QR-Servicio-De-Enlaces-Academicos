@@ -1,0 +1,10 @@
+{
+  "name": "unishort-documentation-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Render local reproducible de los modelos BPMN; sin dependencias del producto",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": { "bpmn": "node render-bpmn.mjs" },
+  "devDependencies": { "bpmn-js": "18.31.1", "playwright": "1.65.0" }
+}

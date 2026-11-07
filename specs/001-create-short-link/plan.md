@@ -1,5 +1,16 @@
 # Implementation Plan: Crear enlaces cortos (Feature 1)
 
+## Reconciliación vigente — 2026-11-06
+
+La implementación está en backend/app y usa POST /api/v1/links; /shorten conserva
+compatibilidad. Hay Alembic 0001–0003, ambos locks y pruebas sobre backend/app
+(umbral 85 %); QR y panel se especifican en 002/003. No existe src/unishort.
+Las diferencias frente al stack de referencia y contrato del PDF se justifican
+en ADR 0001/0002/0005 y docs/evaluacion/auditoria-final-rubrica.md.
+No se atribuye ejecución nueva de comandos Spec Kit ni aprobaciones del equipo.
+
+## Plan inicial conservado
+
 > Diseño inicial conservado como referencia histórica. La implementación vigente
 > usa `backend/app/`, tabla `short_urls` y Alembic `0001`–`0003`. El contrato
 > v1 vigente está en [contracts/v1-links.md](contracts/v1-links.md); el plan de

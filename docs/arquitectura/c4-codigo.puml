@@ -1,6 +1,6 @@
 @startuml UniShortQR-C4-Codigo
 ' Diagrama C4 nivel 4 (código) de UniShort QR.
-' Renderizar con PlantUML: plantuml docs/arquitectura/c4-codigo.puml
+' Render reproducible con PlantUML/Smetana: python scripts/render_diagrams.py
 
 title UniShort QR - C4 Nivel 4 (clases y relaciones relevantes)
 
@@ -17,6 +17,7 @@ package "backend.app.api" {
     +update_link()
     +deactivate_link()
     +get_link_qr()
+    +get_admin_stats()
   }
   class "schemas.py" as Schemas {
     +CreateLinkRequest
@@ -24,6 +25,7 @@ package "backend.app.api" {
     +LinkData
     +LinkEnvelope
     +ErrorItem
+    +AdminStatsEnvelope
   }
   class "deps.py" as Deps {
     +enforce_create_rate_limit()
@@ -47,6 +49,7 @@ package "backend.app" {
     +list_links()
     +link_to_data()
     +database_is_healthy()
+    +get_admin_stats()
   }
   class "domain.py" as Domain {
     +validate_destination_url()
@@ -62,6 +65,7 @@ package "backend.app" {
     +count_links()
     +increment_click_count()
     +update_link()
+    +get_admin_stats()
   }
   class "models.ShortURL" as ShortURL {
     +id: Integer
@@ -103,6 +107,28 @@ package "backend.app" {
   }
 }
 
+package "frontend" {
+  class "index.html" as Public <<página>> {
+    +shortenUrl()
+    +getErrorMessage()
+  }
+  class "admin.mjs" as Admin <<módulo>> {
+    +mountAdmin()
+    -fetchData()
+    -loadList()
+    -save()
+    -logout()
+  }
+  class "admin-i18n.mjs" as Catalog <<catálogo>> {
+    +messages.es
+    +messages.en
+  }
+}
+
+Public --> V1 : POST público y GET PNG
+Admin --> V1 : GET listado/resumen; PATCH protegido
+Admin --> Catalog : textos es/en
+Admin --> Admin : clave en cierre léxico; cancelar al salir
 Main --> V1 : include_router(prefix="/api/v1")
 Main --> Main : registra handlers
 V1 --> Schemas : valida
@@ -121,7 +147,10 @@ Repository --> DomainError : lanza PersistenceError
 Main --> Services : redirección heredada
 Main --> ShortURL : endpoints heredados
 Main --> Envelope : errores v1
-Schemas --> DomainError : envelope de errores
+note bottom of Envelope
+  Construye dicts compatibles con los
+  response_model del router; no importa schemas.
+end note
 
 note right of Domain
   No importa FastAPI ni SQLAlchemy.
@@ -129,8 +158,8 @@ note right of Domain
 end note
 
 note bottom of ShortURL
-  Sin IP, User-Agent, cookies ni
-  identificadores personales.
+  Sin columnas de metadatos de visitantes.
+  La URL original puede contener datos sensibles.
 end note
 
 @enduml

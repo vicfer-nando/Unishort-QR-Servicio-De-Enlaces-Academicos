@@ -20,5 +20,6 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/verify_frontend.mjs
+      - run: node --test tests/js/admin.test.mjs
       - run: python scripts/render_portal.py --prepare-only
-      - run: python scripts/verify_docs.py
+      - run: python scripts/verify_docs.py --allow-unrendered-diagrams

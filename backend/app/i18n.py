@@ -11,6 +11,7 @@ SUPPORTED_LANGUAGES = ("es", "en")
 
 MESSAGES: dict[str, dict[str, str]] = {
     "es": {
+        "stats_retrieved": "Resumen administrativo consultado correctamente.",
         "invalid_request": "La solicitud no es válida.",
         "invalid_payload": "El cuerpo de la solicitud no es válido.",
         "url_required": "El campo 'url' es obligatorio y no puede estar vacío.",
@@ -39,6 +40,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "health_degraded": "Servicio disponible con la base de datos degradada.",
     },
     "en": {
+        "stats_retrieved": "Administrative summary retrieved successfully.",
         "invalid_request": "The request is not valid.",
         "invalid_payload": "The request body is not valid.",
         "url_required": "The 'url' field is required and cannot be empty.",

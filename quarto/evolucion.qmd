@@ -1,0 +1,41 @@
+---
+title: "Evolución, Git y estado real"
+---
+
+## Incrementos observables
+
+| Evidencia Git | Incremento registrado |
+|---|---|
+| 5ff998c | Estructura inicial y herramientas de especificación. |
+| 53f14ac | Incremento funcional con API, QR, persistencia y documentación. |
+| 8df95a3 → PR #2 → 105e39c | Configuración/dependencias y pruebas, contribución fusionada de Martina. |
+| 543701c | Seguridad, migraciones y pruebas; HEAD recibido. |
+| Árbol local posterior | Panel, auditoría y paquete de entrega; no son commits publicados por esta sesión. |
+
+Las cifras históricas 115 → 143 → 145 → 148 corresponden a incrementos distintos,
+no a fallos omitidos. Los resultados del paquete actual están en su
+[registro](paquete/resultados-verificacion.qmd). No confundir una rama remota antigua
+o CI de 543701c con aprobación del contenido local final.
+
+## Colaboración real
+
+Se observa un flujo de ramas de funcionalidad y PR a main, sin develop permanente;
+se justifica como equivalente simplificado para este incremento académico, no
+GitFlow estricto. [CONTRIBUTING](sources/docs/CONTRIBUTING.md) explica sus límites.
+PR #2 está fusionado y aprobado; PR #1 sigue abierto/con conflictos y usa un diseño
+histórico de seguridad diferente. No fusionarlo para simular participación.
+
+Las [fichas individuales](paquete/contribuciones-individuales.qmd) relacionan autores
+registrados, commits, PR y campos personales pendientes. No se alteran autores,
+historia o porcentajes de contribución. Las aprobaciones constitucionales y la
+revisión final requieren evidencia humana, no se generan mediante documentación.
+
+## Evidencia remota confirmada
+
+- [Repositorio](https://github.com/vicfer-nando/Unishort-QR-Servicio-De-Enlaces-Academicos).
+- [PR #2 fusionado](https://github.com/vicfer-nando/Unishort-QR-Servicio-De-Enlaces-Academicos/pull/2).
+- [PR #1 abierto](https://github.com/vicfer-nando/Unishort-QR-Servicio-De-Enlaces-Academicos/pull/1).
+- [CI histórico aprobado para 543701c](https://github.com/vicfer-nando/Unishort-QR-Servicio-De-Enlaces-Academicos/actions/runs/42091635246).
+
+Pages no tiene URL pública confirmada en esta preparación. Publicar/integrar y
+comprobar el SHA final son pasos humanos pendientes, descritos en el dossier.

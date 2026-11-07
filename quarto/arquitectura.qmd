@@ -4,32 +4,49 @@ title: "Arquitectura"
 
 ## Vista de contexto (C1)
 
+![C1: vista exportada del DSL Structurizr](diagrams/C1-Contexto.svg)
+
+[Abrir SVG a tamaño completo](diagrams/C1-Contexto.svg).
+Las figuras formales se generan del DSL; las síntesis Mermaid siguientes facilitan
+la explicación y no sustituyen los modelos exigidos.
+
 ```{mermaid}
 flowchart LR
-    U[Usuario académico] --> F[Frontend web]
-    A[Administrador DTI] --> API[API UniShort QR]
-    E[Docente evaluador] --> F
-    F --> API
-    API --> DB[(Base de datos)]
-    API -. futuro .-> ID[Identidad institucional OIDC]
+    U[Usuario académico] --> S[UniShort QR]
+    A[Administrador técnico] --> S
+    E[Docente evaluador] --> S
+    V[Visitante] --> S
+    V -->|Navegador sigue Location| D[Recurso académico externo]
 ```
+
+El sistema devuelve Location: no consulta ni descarga el recurso externo. OIDC y
+proxy TLS son propuestas futuras en ADR, excluidas de las vistas del software actual.
 
 ## Vista de contenedores (C2)
 
+![C2: contenedores exportados del DSL](diagrams/C2-Contenedores.svg)
+
+[Abrir SVG C2](diagrams/C2-Contenedores.svg).
+
 | Contenedor | Tecnología | Responsabilidad |
 |------------|------------|-----------------|
-| Frontend web | HTML, CSS, JavaScript | Crear enlaces, mostrar y descargar el QR. |
-| Backend API | Python 3.13, FastAPI, Uvicorn | Validar, persistir, redirigir, generar QR y métricas. |
+| Frontend web | HTML, CSS, JavaScript; Python estático o Nginx | Acortador index.html y panel admin.html: acceso, resumen, filtros, gestión confirmada y QR. |
+| Backend API | Python 3.13, FastAPI, Uvicorn | Validar, persistir, redirigir, generar QR bajo demanda, autorizar y consultar métricas SQL. |
 | Base de datos | SQLite (desarrollo) | Conservar enlaces, estado, expiración y contador. |
-| Proxy HTTPS | Nginx (futuro) | Terminación TLS y límite perimetral. |
-| Identidad institucional | OIDC (futuro) | Autenticación aprobada de administradores. |
+
+Nginx en Docker sirve archivos estáticos; no se presenta como proxy TLS ya
+configurado. La API usa 8000 y el frontend 5500; CORS limita los orígenes de Compose.
 
 ## Vista de componentes (C3)
+
+![C3: componentes del backend exportados del DSL](diagrams/C3-Componentes-backend.svg)
+
+[Abrir SVG C3](diagrams/C3-Componentes-backend.svg).
 
 ```{mermaid}
 flowchart TB
     subgraph API[Backend FastAPI]
-        V1[API v1]
+        V1[API v1: links y admin/stats]
         LEG[Compatibilidad heredada]
         SCH[Esquemas Pydantic]
         SRV[Casos de uso]
@@ -47,9 +64,61 @@ flowchart TB
     LEG --> SRV
     SRV --> DOM
     SRV --> REP
+    REP --> DOM
     REP --> DB[(SQLite)]
     QR --> PNG[PNG en memoria]
 ```
+
+## Código significativo (C4/UML)
+
+![C4: módulos y clases renderizados desde PlantUML](diagrams/C4-Codigo.svg)
+
+[Abrir SVG C4](diagrams/C4-Codigo.svg).
+
+```{mermaid}
+classDiagram
+    class V1 {
+        +create_link()
+        +list_links()
+        +get_admin_stats()
+        +update_link()
+        +get_link_qr()
+    }
+    class Services {
+        +create_short_link()
+        +update_link_state()
+        +get_admin_stats()
+        +ensure_link_usable()
+    }
+    class Domain {
+        +validate_destination_url()
+        +normalize_expiration()
+        +generate_short_code()
+    }
+    class Repository {
+        +create_link()
+        +list_links()
+        +get_admin_stats()
+        +update_link()
+    }
+    class ShortURL
+    class Deps {
+        +require_admin()
+        +enforce_create_rate_limit()
+    }
+    V1 --> Services
+    V1 --> Deps
+    Services --> Domain
+    Services --> Repository
+    Repository --> ShortURL
+```
+
+Esta síntesis representa módulos y responsabilidades, no solo tablas. El PlantUML
+enlazado incluye schemas/envelope, configuración, errores, aplicación y ambos
+frontends. Sus fuentes se revisaron frente al código. El render reproducible usa
+Structurizr → PlantUML/Smetana para C1–C3 y PlantUML para C4, sin servicio externo.
+Consultar el [resultado real de ejecución](paquete/resultados-verificacion.qmd):
+la presencia de estos enlaces en fuentes no acredita un render ejecutado.
 
 ## Decisiones de arquitectura
 
@@ -70,7 +139,8 @@ flowchart TB
 
 1. **Dominio puro:** `domain.py` no importa FastAPI ni SQLAlchemy.
 2. **Persistencia transaccional:** commit o rollback completo.
-3. **Privacidad por diseño:** sin IP, cookies, User-Agent ni eventos
-   individuales almacenados.
+3. **Privacidad por diseño:** sin metadatos de visitantes ni eventos individuales.
+   Las URLs originales pueden contener datos sensibles ingresados por sus creadores.
 4. **Compatibilidad:** los enlaces publicados siguen funcionando.
-5. **Configuración por entorno:** sin secretos ni dominios codificados.
+5. **Configuración por entorno:** sin claves reales en fuentes. Loopback es el
+   valor de desarrollo; /shorten aún deriva su URL del Host por compatibilidad.

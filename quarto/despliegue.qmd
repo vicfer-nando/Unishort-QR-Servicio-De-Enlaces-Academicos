@@ -1,0 +1,44 @@
+---
+title: "Instalación, despliegue y operación"
+---
+
+## Windows 11
+
+La [guía exacta de reproducción](paquete/instrucciones-reproduccion.qmd) contiene
+clone, Python 3.13/venv, locks, variables, base temporal, Alembic, Uvicorn y servidor
+estático. No hace falta activar el entorno ni cambiar políticas de PowerShell.
+
+| Componente local | Dirección / comprobación |
+|---|---|
+| Acortador | <http://localhost:5500/index.html> |
+| Administración | <http://localhost:5500/admin.html> |
+| Swagger / esquema | <http://localhost:8000/docs> · <http://localhost:8000/openapi.json> |
+| Salud y persistencia disponible | <http://localhost:8000/health> |
+| Portal generado | <http://localhost:5600/> tras servir quarto/_site |
+
+## Configuración
+
+DATABASE_URL selecciona la base mediante UNISHORT_DATABASE_URL; usar un directorio
+temporal nuevo en demostraciones. UNISHORT_BASE_URL determina los enlaces v1;
+UNISHORT_CORS_ORIGINS limita orígenes. UNISHORT_ADMIN_API_KEY vacía deshabilita
+administración; leerla con Read-Host oculto. Prefijo, límites, tamaño QR y nivel de
+logging están definidos en Settings y .env.example. No publicar .env ni claves.
+
+Aplicar `alembic upgrade head` antes de servir. Las tres revisiones son aditivas;
+no recrear bases para actualizar. El health consulta la base; los logs de operación
+permiten correlación por request ID sin registrar destinos completos ni secretos.
+
+## Docker y reproducibilidad
+
+Dockerfile usa usuario sin privilegios y entrypoint con migraciones; Compose añade
+Nginx estático, volumen SQLite y healthchecks. Usar un nombre de proyecto nuevo
+para la demo y `config --quiet`; no eliminar volúmenes. Instrucciones y estado real
+en [reproducción](paquete/instrucciones-reproduccion.qmd) y
+[resultados](paquete/resultados-verificacion.qmd). Una revisión YAML no prueba build.
+
+## Portal que no depende de una PC encendida
+
+El workflow documentation construye Quarto y los ocho diagramas en Actions.
+La [guía Pages](paquete/publicacion-quarto.qmd) explica permisos, revisión del artefacto,
+ejecución manual con publicar=true y verificación de la URL real. No se despliega
+en push/PR. No hay secretos de aplicación en el sitio ni claves para construirlo.

@@ -44,3 +44,23 @@ Se implementa una **clave administrativa compartida** enviada en la cabecera
 - Debe rotarse por entorno y nunca confirmarse en Git.
 - El mecanismo se documenta como provisional; la autenticación institucional es
   un requisito pendiente y bloqueado hasta que exista especificación aprobada.
+
+## Ampliación 003: panel web (2026-11-05)
+
+La pantalla admin.html valida la clave contra GET /api/v1/links paginado,
+endpoint protegido preexistente, y luego consulta GET /api/v1/admin/stats. La clave
+vive únicamente en un cierre léxico de JavaScript, nunca en Web Storage, cookies,
+HTML o URLs. Al cerrar sesión o abandonar la página se vacía y se abortan peticiones;
+las respuestas tardías de otra generación de sesión se descartan. Cada operación
+sigue validando require_admin; no se añade una sesión ni permiso decidido por cliente.
+
+Se usa cache no-store, redirect error y credentials omit; el QR se obtiene por una
+ruta construida del mismo backend, sin enviar clave ni confiar en qr_url del registro.
+Los mensajes de error se seleccionan de un catálogo local y no reflejan respuestas
+arbitrarias del servidor. La página tiene CSP restrictiva y no carga terceros.
+
+Alternativas descartadas: persistir la clave para recordar acceso o emitir cookies
+propias en esta fase. Consecuencias: recargar exige otra autenticación y cerrar
+sesión no revoca la clave compartida global. Se conserva el riesgo de identidad
+compartida y exposición ante scripts comprometidos; HTTPS y frontend de confianza
+son necesarios. La ampliación está implementada localmente; revisión humana pendiente.

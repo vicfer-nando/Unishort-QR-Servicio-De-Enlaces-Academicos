@@ -1,0 +1,60 @@
+---
+title: "Panel administrativo"
+---
+
+## Abrir y usar
+
+Inicia el backend en 8000 y el frontend con `python scripts/serve_frontend.py`.
+Abre <http://localhost:5500/admin.html> e introduce la clave configurada en
+`UNISHORT_ADMIN_API_KEY`. Para definirla sin historial ni salida visible:
+
+```powershell
+$adminSecret = Read-Host "Clave administrativa temporal" -AsSecureString
+$env:UNISHORT_ADMIN_API_KEY = [Net.NetworkCredential]::new("", $adminSecret).Password
+Remove-Variable adminSecret
+```
+
+Define la variable antes de iniciar Uvicorn con `--no-access-log`. El
+[guion completo](sources/specs/003-admin-dashboard/quickstart.md) crea una base
+temporal para demostrar el incremento sin modificar las bases existentes.
+
+## Funcionalidades
+
+- Resumen global: registrados, activos, desactivados, caducados y visitas.
+- Lista paginada con búsqueda literal por código/URL y filtro por estado.
+- Copiar y abrir enlace; abrir incrementa visitas. Descargar QR no las incrementa.
+- Gestionar permite habilitar/deshabilitar y cambiar/quitar caducidad, con confirmación.
+- Fecha introducida en hora local y transmitida como UTC. Habilitar un vencido
+  no elimina la fecha; se debe ampliar o quitar. QR solo para enlaces utilizables.
+- Idiomas español e inglés, foco visible, región de tabla desplazable y mensajes de estado.
+
+## Contratos y seguridad
+
+GET `/api/v1/admin/stats` usa COUNT/SUM/CASE en una consulta y exige la misma clave
+que el listado y PATCH. GET `/api/v1/links` añade `q` y `status` sin cambiar el
+envelope. Los totales del dashboard son globales; `total` de la lista es filtrado.
+El estado desactivado tiene prioridad sobre caducidad para evitar doble conteo.
+
+La clave se envía en cabecera, solo existe en memoria, nunca se guarda en Web
+Storage/cookies y se borra al salir/recargar. Logout cancela peticiones y descarta
+respuestas tardías. 401, 403 y 503 muestran errores claros y cierran sesión local.
+La API valida todos los permisos, usa no-store y no registra búsquedas ni claves.
+Las URLs se muestran mediante textContent; el QR se pide al backend sin la clave.
+
+Autenticación académica provisional: no hay usuarios, roles, MFA, identidad ni
+auditoría individual. Cerrar sesión no revoca la clave compartida; la rotación exige
+reiniciar el backend. Usar HTTPS fuera de loopback. La CSP permite API local 8000 y
+mismo origen; otros despliegues requieren configurar explícitamente su origen.
+
+## Evidencia y límites
+
+La suite Python conserva las 115 pruebas anteriores y añade aceptación, contratos,
+seguridad y agregación SQL. Hay 19 pruebas JavaScript reales con DOM/red simulados.
+El acceso automatizado al navegador no estuvo disponible: siguen pendientes la
+comprobación visual/manual, teclado móvil y auditoría WCAG. No se afirma aprobación
+del equipo ni institucional. La ejecución Docker/render Quarto y el estado de
+publicación actual se registran separadamente en
+[resultados de la entrega](paquete/resultados-verificacion.qmd).
+
+La [especificación 003](sources/specs/003-admin-dashboard/spec.md) y su
+[contrato](sources/specs/003-admin-dashboard/contracts/admin.md) describen la aceptación.

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0e3d2a">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' http://localhost:8000 http://127.0.0.1:8000; img-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Administración | UniShort QR</title>
+  <link rel="stylesheet" href="admin.css">
+  <script type="module" src="admin.mjs"></script>
+</head>
+<body>
+  <a href="#main" class="skip-link" data-i18n="skip"></a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html">UniShort <span>QR</span><small>Universidad Nacional de Loja</small></a>
+      <nav aria-label="UniShort QR">
+        <a href="index.html" data-i18n="public"></a>
+        <a href="admin.html" aria-current="page" data-i18n="admin"></a>
+      </nav>
+      <label class="language"><span data-i18n="language"></span>
+        <select id="language"><option value="es">Español</option><option value="en">English</option></select>
+      </label>
+    </div>
+  </header>
+  <main id="main" class="page-shell">
+    <div class="page-heading">
+      <div><p class="kicker" data-i18n="kicker"></p><h1 data-i18n="heading"></h1><p class="intro" data-i18n="intro"></p></div>
+      <button id="logout" class="secondary" hidden data-i18n="logout"></button>
+    </div>
+    <aside class="notice"><strong data-i18n="provisional"></strong><p data-i18n="notice"></p></aside>
+    <p id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true"></p>
+    <section id="login-panel" class="login-card card" aria-labelledby="login-title">
+      <div class="login-mark" aria-hidden="true">U<span>Q</span></div>
+      <h2 id="login-title" data-i18n="loginTitle"></h2><p class="muted" data-i18n="loginIntro"></p>
+      <!-- Sin action ni name: una falla del script no envía el secreto por formulario. -->
+      <form id="login-form" autocomplete="off">
+        <label for="admin-key" data-i18n="key"></label>
+        <input id="admin-key" type="password" autocomplete="off" required spellcheck="false" autocapitalize="none" aria-describedby="key-help">
+        <p id="key-help" class="help" data-i18n="keyHelp"></p>
+        <button id="login-submit" class="primary" type="submit" data-i18n="login"></button>
+      </form>
+    </section>
+    <div id="dashboard" hidden>
+      <section aria-labelledby="overview-title">
+        <div class="section-heading"><div><h2 id="overview-title" data-i18n="overview"></h2><p class="help" data-i18n="overviewHelp"></p></div><button id="refresh" class="secondary" data-i18n="refresh"></button></div>
+        <dl class="metrics">
+          <div><dt data-i18n="total_links"></dt><dd id="metric-total_links">—</dd></div>
+          <div><dt data-i18n="active_links"></dt><dd id="metric-active_links">—</dd></div>
+          <div><dt data-i18n="inactive_links"></dt><dd id="metric-inactive_links">—</dd></div>
+          <div><dt data-i18n="expired_links"></dt><dd id="metric-expired_links">—</dd></div>
+          <div><dt data-i18n="total_visits"></dt><dd id="metric-total_visits">—</dd></div>
+        </dl>
+      </section>
+      <section class="card library" aria-labelledby="list-title">
+        <div class="section-heading"><div><h2 id="list-title" data-i18n="listTitle"></h2><p class="help" data-i18n="listHelp"></p></div></div>
+        <form id="filters" class="filters">
+          <div class="search-field"><label for="query" data-i18n="search"></label><input id="query" type="search" maxlength="2048" data-i18n-placeholder="searchPlaceholder"></div>
+          <div><label for="status-filter" data-i18n="filter"></label><select id="status-filter"><option value="" data-i18n="all"></option><option value="active" data-i18n="active"></option><option value="inactive" data-i18n="inactive"></option><option value="expired" data-i18n="expired"></option></select></div>
+          <div><label for="page-size" data-i18n="pageSize"></label><select id="page-size"><option>20</option><option>50</option><option>100</option></select></div>
+          <button id="search-submit" class="primary" type="submit" data-i18n="apply"></button>
+        </form>
+        <p class="help table-help" id="table-help" data-i18n="tableHelp"></p>
+        <div class="table-scroll" role="region" aria-labelledby="list-title" aria-describedby="table-help" tabindex="0">
+          <table><thead><tr><th scope="col" data-i18n="link"></th><th scope="col" data-i18n="state"></th><th scope="col" data-i18n="visits"></th><th scope="col" data-i18n="expiration"></th><th scope="col" data-i18n="actions"></th></tr></thead><tbody id="link-rows"></tbody></table>
+        </div>
+        <p id="empty" class="empty" hidden data-i18n="empty"></p>
+        <div class="pagination"><p id="page-info" role="status"></p><div><button id="previous" class="secondary" data-i18n="previous"></button><button id="next" class="secondary" data-i18n="next"></button></div></div>
+      </section>
+      <p class="help behavior-note" data-i18n="behaviorHelp"></p>
+    </div>
+    <dialog id="edit-dialog" aria-labelledby="edit-title" aria-describedby="edit-help">
+      <form id="edit-form">
+        <p class="kicker">UniShort QR</p><h2 id="edit-title" data-i18n="editTitle"></h2><p id="edit-code" class="edit-code"></p>
+        <label class="checkbox"><input id="edit-active" type="checkbox"><span data-i18n="editActive"></span></label>
+        <label for="edit-expiration" data-i18n="editExpiration"></label><input id="edit-expiration" type="datetime-local">
+        <p id="edit-help" class="help" data-i18n="editHelp"></p>
+        <p id="edit-feedback" class="feedback" role="alert"></p>
+        <div class="dialog-actions"><button id="edit-cancel" type="button" class="secondary" data-i18n="cancel"></button><button id="edit-save" type="submit" class="primary" data-i18n="confirm"></button></div>
+      </form>
+    </dialog>
+    <noscript>Activa JavaScript para utilizar el panel. / Enable JavaScript to use the dashboard.</noscript>
+  </main>
+  <footer data-i18n="footer"></footer>
+</body>
+</html>
