@@ -1,79 +1,48 @@
 ---
-title: "Pruebas y evidencias"
+title: "Pruebas, cobertura y verificación"
 ---
 
-## Resultado actual
+## Resultado efectivo
 
-```text
-python -m pytest tests -q
-115 passed
-```
+Consultar el [registro de esta preparación](paquete/resultados-verificacion.qmd),
+que separa resultados nuevos de históricos y limita expresamente lo no verificado.
+La auditoría previa aprobó 148 Python, 19 JS, cobertura backend 95,22 %, Ruff y mypy.
+No se considera CI del árbol local una ejecución anterior de GitHub.
 
-Fecha de la última ejecución: **2026-11-05**. Las pruebas usan SQLite aislada,
-no acceden a la red pública y no dependen de datos reales.
+## Capas y aceptación
 
-## Organización de la suite
+| Tipo | Ubicación / casos relevantes |
+|---|---|
+| Unitarias | tests/unit: dominio, configuración, limitador, rollback, colisiones, SQL agregado y herramientas documentales. |
+| Integración | tests/integration: PNG decodificado con OpenCV, persistencia/reinicio, Alembic y gestión administrativa. |
+| API y contratos | tests/contract: envelope, validación, estados HTTP, errores, OpenAPI y compatibilidad. |
+| Seguridad | tests/security y JS: permisos, no-store, clave ausente/incorrecta/no configurada, DOM seguro y memoria de sesión. |
+| Frontend | verify_frontend.mjs y 19 casos admin.test.mjs sobre el JavaScript real con DOM/red simulados. |
+| Documentación | test_delivery_tools.py, verify_docs.py y verify_site.py: rutas seguras, enlaces/anclas y despliegue manual. |
 
-| Carpeta | Cobertura funcional |
-|---------|---------------------|
-| `tests/unit` | Dominio, configuración, limitador, repositorio, colisiones y rollback. |
-| `tests/integration` | QR decodificable, administración, métricas y persistencia tras reinicio. |
-| `tests/contract` | Envelope, estados HTTP, localización, rate limit y OpenAPI. |
-| `tests/security` | Autenticación administrativa y ausencia de columnas PII. |
-| `tests/test_basic.py`, `tests/test_shorten.py` | Compatibilidad del MVP heredado. |
+El render Quarto local ya construyó 25 páginas y los ocho modelos formales se
+exportaron a SVG. `check-portal.mjs` inspecciona HTML/imágenes/Mermaid en Chromium y
+captura el inicio a 1440×1000 y 390×844. El resultado y las imágenes se identifican
+como verificación automatizada documental, no aceptación humana del producto.
 
-## Casos destacados
+Los casos de colisiones prueban rollback y límite de reintentos. La ronda de
+10 000 códigos comprueba unicidad observada, no imposibilidad matemática de colisión.
+El QR se decodifica y compara con la URL corta. Las pruebas administrativas comprueban
+resumen en SQL, búsqueda literal, filtros/paginación, estados y caducidad.
 
-- **10 000 códigos**: `test_ten_thousand_codes_are_unique` verifica que no se
-  repite ningún código en una ronda de 10 000.
-- **Colisión**: un generador inyectado repite un código existente; el
-  repositorio reintenta sin sobrescribir y agota con `409`.
-- **Persistencia**: un fallo de SQLAlchemy revierte la transacción y lanza
-  `PersistenceError`.
-- **Reinicio**: el enlace sigue resolviendo después de reconstruir el engine
-  sobre el mismo archivo SQLite.
-- **QR**: OpenCV decodifica el PNG y confirma que el contenido es la URL corta.
-- **Privacidad**: la inspección del esquema no encuentra columnas de IP,
-  User-Agent, cookies ni sesión.
+## Reproducir
 
-## Comandos
+Comandos exactos, basetemp exclusivo y requisitos de puertos en
+[instrucciones de reproducción](paquete/instrucciones-reproduccion.qmd).
+El umbral configurado es 85 %, no se reduce para aprobar. Ruff y mypy estricto
+complementan las pruebas; no sustituyen aceptación del producto.
 
-```powershell
-python -m pytest tests -q
-python -m pytest tests --cov=backend/app --cov-report=term-missing
-python -m ruff check backend tests
-python -m ruff format --check backend tests
-python -m mypy backend/app
-```
+## Qué no prueban estas ejecuciones
 
-## Estado de calidad
+DOM simulado no verifica presentación, teclado real o accesibilidad completa.
+HTTP loopback no equivale a carga concurrente ni producción; el p95 HTTP de la
+auditoría no satisface por sí solo SC-004 visual o SC-007 con persona no técnica.
+Docker, portal público, capturas y revisión humana requieren evidencia específica.
 
-| Control | Estado |
-|---------|--------|
-| Suite funcional | Verde: 115 pruebas. |
-| Cobertura medida | 94,88 % total; umbral 85 % superado; `rate_limit.py` 100 %. |
-| `ruff check` | `All checks passed!` |
-| `ruff format --check` | 46 archivos ya formateados. |
-| `mypy --strict` | Sin errores en 20 archivos fuente. |
-| Verificación manual en navegador | Pendiente de registrar. |
-
-> La cobertura y los análisis estáticos se midieron el 2026-11-05. Docker y
-> Quarto no están instalados en este entorno, por lo que sus entregables no se
-> ejecutaron aquí; los pendientes restantes están en la página de entrega y en
-> `tasks.md`.
-
-## Evidencia reproducible
-
-1. Instalar dependencias de `backend/requirements-dev.txt`.
-2. Ejecutar `python -m pytest tests -q` desde la raíz.
-3. Abrir `/docs` y crear un enlace.
-4. Descargar el QR y comprobar que apunta a `/s/{code}`.
-
-## Revisión vigente del 2026-11-05
-
-La ejecución HTTP real, el JavaScript con DOM simulado, los límites y las
-correcciones están documentados en [el informe de verificación](sources/docs/evaluacion/verificacion-2026-11-05.md).
-La comprobación visual de Edge agotó la autorización de la herramienta.
-Docker y Quarto no están disponibles; no se acredita build ni render.
-El p95 HTTP local fue 7,71 ms al crear y 6,31 ms al redirigir (100 muestras,
-concurrencia 1); no sustituye SC-004 visual ni SC-007 con persona no técnica.
+[Auditoría detallada](auditoria.qmd), [matriz final](paquete/matriz-rubrica-final.qmd),
+[lista de capturas pendientes](paquete/evidencias-capturas.qmd).

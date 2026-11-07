@@ -1,0 +1,12 @@
+{
+  "kind": "inspeccion automatizada de documentacion local, no demostracion humana del producto",
+  "generated_at": "2026-11-07T00:42:46.594Z",
+  "browser": "158.0.8127.18",
+  "pages": 25,
+  "diagrams": 8,
+  "viewports": [
+    "1440x1000",
+    "390x844"
+  ],
+  "failures": []
+}

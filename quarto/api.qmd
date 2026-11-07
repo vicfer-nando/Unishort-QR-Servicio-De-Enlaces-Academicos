@@ -9,6 +9,7 @@ title: "API"
 | POST | `/api/v1/links` | No | Crear enlace. |
 | GET | `/api/v1/links/{code}` | No | Consultar metadatos. |
 | GET | `/api/v1/links` | Admin | Listar con paginación. |
+| GET | `/api/v1/admin/stats` | Admin | Totales globales agregados en SQL. |
 | PATCH | `/api/v1/links/{code}` | Admin | Cambiar estado o expiración. |
 | DELETE | `/api/v1/links/{code}` | Admin | Desactivar lógicamente. |
 | GET | `/api/v1/links/{code}/stats` | Admin | Métricas agregadas. |
@@ -18,6 +19,20 @@ title: "API"
 | GET | `/health` | No | Disponibilidad. |
 
 Documentación interactiva: <http://127.0.0.1:8000/docs>.
+Esquema exportado desde la aplicación actual sin usar bases reales:
+[OpenAPI JSON](sources/openapi.json).
+
+El listado añade `q` (1..2048 caracteres, búsqueda literal por código/URL) y
+`status` (active/inactive/expired). Conserva limit 1..200 y offset >=0;
+su total cuenta coincidencias. El resumen devuelve total_links, active_links,
+inactive_links, expired_links y total_visits. Los estados no se solapan;
+inactivo tiene prioridad sobre caducado. Todas las respuestas admin usan no-store.
+Uso web: [panel administrativo](administracion.qmd).
+
+El PDF usa errors:null como referencia; v1 conserva [] en éxito y lista en error,
+con las cinco claves universales. PNG y 307 responden según su representación HTTP.
+GET /, POST /shorten y algunos errores de /s mantienen formato heredado como
+excepción de compatibilidad documentada en ADR 0005, no como excepción del protocolo.
 
 ## Envelope
 
@@ -69,7 +84,7 @@ El PNG codifica `http://localhost:8000/s/abc2345`, nunca la URL original.
 ## Administración
 
 ```powershell
-$headers = @{ "X-Admin-API-Key" = "dev-admin-cambiar-en-produccion" }
+$headers = @{ "X-Admin-API-Key" = $env:UNISHORT_ADMIN_API_KEY }
 Invoke-RestMethod -Uri "http://localhost:8000/api/v1/links" -Headers $headers
 ```
 
@@ -98,3 +113,4 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/v1/links" -Headers $headers
 - [`shorten.md`](sources/specs/001-create-short-link/contracts/shorten.md)
 - [`errors.md`](sources/specs/001-create-short-link/contracts/errors.md)
 - [`qr.md`](sources/specs/002-generate-qr/contracts/qr.md)
+- [`admin.md`](sources/specs/003-admin-dashboard/contracts/admin.md)

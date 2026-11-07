@@ -1,0 +1,17 @@
+{
+  "quarto": {
+    "version": "1.11.9",
+    "url": "https://github.com/quarto-dev/quarto-cli/releases/download/v1.11.9/quarto-1.11.9-win.zip",
+    "sha256": "eda220a2f39c392f622049de013ddf7b4dfdf019ba877f251be14ce43e5734d1"
+  },
+  "plantuml": {
+    "version": "1.2026.9",
+    "url": "https://github.com/plantuml/plantuml/releases/download/v1.2026.9/plantuml-1.2026.9.jar",
+    "sha256": "aa4a1d06f8911c4b842beff4828dd955be431692b631a312d04c0e9fab9581de"
+  },
+  "structurizr": {
+    "version": "2025.11.09",
+    "url": "https://github.com/structurizr/cli/releases/download/v2025.11.09/structurizr-cli.zip",
+    "sha256": "f5365a463fc44d539ed19bec00c48ba1e1ecda0ccfd1ba40d2e7472d264eb79a"
+  }
+}

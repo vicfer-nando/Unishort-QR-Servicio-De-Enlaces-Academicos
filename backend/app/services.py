@@ -18,6 +18,7 @@ from .domain import (
     build_short_url,
     is_expired,
     normalize_expiration,
+    utc_now,
     validate_destination_url,
 )
 from .errors import LinkExpiredError, LinkInactiveError, LinkNotFoundError
@@ -240,12 +241,21 @@ def list_links(
     session: Session,
     limit: int = 50,
     offset: int = 0,
+    q: Optional[str] = None,
+    status: Optional[str] = None,
 ) -> tuple[List[ShortURL], int]:
     """Devuelve una página de enlaces y el total disponible."""
 
+    now = utc_now()
     return repository.list_links(
-        session, limit=limit, offset=offset
-    ), repository.count_links(session)
+        session, limit=limit, offset=offset, q=q, status=status, now=now
+    ), repository.count_links(session, q=q, status=status, now=now)
+
+
+def get_admin_stats(session: Session) -> dict[str, int]:
+    """Devuelve métricas agregadas sin eventos ni datos personales de visitantes."""
+
+    return repository.get_admin_stats(session, utc_now())
 
 
 def database_is_healthy(session: Session) -> bool:

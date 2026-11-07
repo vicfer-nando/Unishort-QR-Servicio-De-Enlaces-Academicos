@@ -75,6 +75,7 @@ def require_admin(
     """
 
     config = get_settings()
+    request.state.admin_request = True
     if not config.admin_api_key:
         raise AdminNotConfiguredError
     if not x_admin_api_key:

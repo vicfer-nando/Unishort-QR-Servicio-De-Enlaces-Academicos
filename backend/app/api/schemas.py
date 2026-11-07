@@ -117,3 +117,23 @@ class HealthEnvelope(BaseModel):
     data: Optional[dict[str, Any]] = None
     errors: List[ErrorItem] = Field(default_factory=list)
     meta: ResponseMeta
+
+
+class AdminStatsData(BaseModel):
+    """Totales administrativos globales calculados por el servidor."""
+
+    total_links: int
+    active_links: int
+    inactive_links: int
+    expired_links: int
+    total_visits: int
+
+
+class AdminStatsEnvelope(BaseModel):
+    """Envelope del resumen administrativo protegido."""
+
+    success: bool
+    message: str
+    data: AdminStatsData
+    errors: List[ErrorItem] = Field(default_factory=list)
+    meta: ResponseMeta

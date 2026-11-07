@@ -1,0 +1,97 @@
+name: Documentación Quarto
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publicar:
+        description: Publicar en GitHub Pages tras revisar el sitio y configurar Pages
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documentation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - run: python -m pip install -r requirements-dev.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tools/documentation/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: '1.11.9'
+      - name: Dependencias de render BPMN
+        run: npm --prefix tools/documentation ci --ignore-scripts --no-audit --no-fund
+      - name: Chromium aislado para bpmn-js
+        working-directory: tools/documentation
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.verification/docs-tools/browsers
+        run: npx playwright install --with-deps chromium
+      - run: python scripts/setup_docs_tools.py
+      - run: python scripts/render_diagrams.py
+      - run: python scripts/render_portal.py --prepare-only
+      - run: python scripts/verify_docs.py
+      - run: python scripts/render_portal.py
+      - run: python scripts/verify_site.py
+      - name: Inspección del portal en Chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.verification/docs-tools/browsers
+        run: node tools/documentation/check-portal.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unishort-documentation-qa
+          path: |
+            docs/evaluacion/entrega-final/evidencias-automaticas/
+            quarto/diagrams/manifest.json
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unishort-quarto-site
+          path: quarto/_site/
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-pages-artifact@v4
+        if: github.event_name == 'workflow_dispatch' && inputs.publicar && github.ref == 'refs/heads/main'
+        with:
+          path: quarto/_site/
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.publicar && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - name: Publicar sitio revisado
+        id: deployment
+        uses: actions/deploy-pages@v4

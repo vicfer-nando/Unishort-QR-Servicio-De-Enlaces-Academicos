@@ -1,0 +1,24 @@
+---
+title: "Contribución individual y uso de IA"
+---
+
+La evaluación distingue evidencia grupal e individual. Los nombres/cuentas
+identificados en Git se documentan sin atribuir todo el código a la persona
+propietaria. Un commit registra una autoría; no certifica escritura manual de
+cada línea, horas dedicadas ni dominio técnico.
+
+- [Cinco fichas: Victor, Martina, María, Servio y Wilson](paquete/contribuciones-individuales.qmd):
+  commits/PR verificables, estado de integración y preguntas personales pendientes.
+- [Declaración IA](paquete/declaracion-uso-ia.qmd): apoyo de ChatGPT/Codex observado;
+  OpenCode configurado, uso efectivo/modelo pendientes de confirmación.
+- [Lista de capturas](paquete/evidencias-capturas.qmd) y
+  [guion](paquete/guion-demostracion.qmd): obtener evidencia auténtica y explicar aportes.
+
+La lista de cinco integrantes y sus responsabilidades fue confirmada por el equipo.
+No se publican correos personales. La participación inicial compartida y las
+asignaciones ACD/APE/AA se distinguen de commits, documentos y realización acreditada.
+
+Cada integrante debe completar su reflexión y explicar su aportación respaldada.
+El equipo debe aportar los materiales académicos aún ausentes y revisar resultados
+y asumir responsabilidad académica. No se atribuye una revisión humana que no
+consta ni se presentan plantillas como firmas o aprobaciones.

@@ -1,0 +1,44 @@
+---
+title: "Seguridad y límites de producción"
+---
+
+## Controles implementados
+
+| Riesgo pertinente | Control actual | Evidencia |
+|---|---|---|
+| Acceso administrativo indebido | Validación backend de X-Admin-API-Key por operación, comparación segura; 401/403/503 | api/deps.py; pruebas security/contratos. |
+| Exposición de credenciales | Clave solo en memoria del panel, sin URL/storage/cookies; logout; no-store; Settings repr sin clave | 19 pruebas JS del panel y test_config.py. |
+| XSS e inyección | textContent/DOM seguro, CSP, consultas SQL parametrizadas, búsqueda literal | admin.mjs; tests JS y queries. |
+| Entrada inválida | Pydantic más dominio; solo http/https, host, longitud, sin credenciales embebidas; expiración futura | domain.py, schemas y pruebas de dominio/contrato. |
+| Abuso de creación | Límite efímero por proceso, respuesta 429 | rate_limit.py y pruebas. |
+| Filtración por errores/logs | Mensajes controlados, request ID, logs estructurados sin destino completo ni claves | logging_config.py; pruebas de errores/logging. |
+| Configuración insegura de demo | CORS local explícito, clave no predeterminada, lectura oculta, BD nueva | Guía de reproducción y .env.example. |
+
+Se consideran controles asociados a OWASP (acceso, inyección, configuración,
+errores y datos sensibles), sin afirmar certificación ni auditoría OWASP completa.
+La API no descarga el destino introducido; el navegador sigue Location. Un
+acortador público puede facilitar enlaces maliciosos y necesita política de abuso.
+
+## Autenticación provisional
+
+El formulario comprueba el listado protegido antes de mostrar datos. Ocultar botones
+no autoriza operaciones: cada consulta/cambio vuelve a validar la clave en el servidor.
+Recargar o salir obliga a introducirla otra vez; cerrar sesión descarta la copia de
+la página y no revoca la clave compartida para otros clientes. Rotarla exige cambiar
+configuración y reiniciar el servidor. No existe identidad individual ni roles.
+
+No introducir la clave en Swagger durante una proyección ni mostrar cabeceras o
+variables de entorno. Usar HTTPS fuera de loopback, scripts propios de confianza
+y una política de orígenes específica. No abrir CORS para evitar un error de conexión.
+
+## Riesgos residuales
+
+Sin OIDC/MFA, revocación por usuario, auditoría por persona ni limitador distribuido.
+SQLite y servidor local son adecuados para el incremento académico probado;
+PostgreSQL, proxy TLS, endurecimiento de Host legacy y operación pública necesitan
+decisiones posteriores. Las URLs almacenadas pueden contener datos sensibles:
+no se garantiza anonimato del contenido que una persona pega.
+
+[Modelo de riesgos y controles completo](sources/docs/evaluacion/seguridad-y-riesgos.md),
+[ADR de autenticación](sources/docs/adr/0004-autenticacion-provisional-administrativa.md),
+[reproducción segura](paquete/instrucciones-reproduccion.qmd).

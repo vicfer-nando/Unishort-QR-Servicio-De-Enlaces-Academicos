@@ -86,6 +86,8 @@ async def add_request_context(
     response: Response | None = None
     try:
         response = await call_next(request)
+        if getattr(request.state, "admin_request", False):
+            response.headers["Cache-Control"] = "no-store"
         status_code = response.status_code
         response.headers["X-Request-Id"] = request_id
         response.headers["X-Log-Request-Id"] = server_request_id
@@ -100,6 +102,8 @@ async def add_request_context(
             },
         )
         response = await unhandled_exception_handler(request, exc)
+        if getattr(request.state, "admin_request", False):
+            response.headers["Cache-Control"] = "no-store"
         response.headers["X-Request-Id"] = request_id
         response.headers["X-Log-Request-Id"] = server_request_id
         return response

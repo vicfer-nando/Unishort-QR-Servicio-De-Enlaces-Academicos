@@ -30,6 +30,9 @@ dist/
 quarto/_site/
 quarto/.quarto/
 quarto/sources/
+quarto/paquete/
+quarto/diagrams/
+tools/documentation/node_modules/
 
 # Sistema operativo
 Thumbs.db

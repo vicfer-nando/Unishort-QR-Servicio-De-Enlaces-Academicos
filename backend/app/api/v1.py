@@ -1,6 +1,6 @@
 """Rutas REST versionadas de UniShort QR (``/api/v1``)."""
 
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy.orm import Session
@@ -12,6 +12,7 @@ from ..qr import generate_qr_png
 from .deps import enforce_create_rate_limit, require_admin
 from .envelope import success_envelope
 from .schemas import (
+    AdminStatsEnvelope,
     CreateLinkRequest,
     ErrorEnvelope,
     LinkEnvelope,
@@ -73,11 +74,15 @@ def list_links(
     request: Request,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
+    q: str | None = Query(default=None, min_length=1, max_length=2048),
+    status: Literal["active", "inactive", "expired"] | None = Query(default=None),
     session: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """Lista los enlaces existentes; requiere clave administrativa."""
 
-    links, total = services.list_links(session, limit=limit, offset=offset)
+    links, total = services.list_links(
+        session, limit=limit, offset=offset, q=q, status=status
+    )
     settings = get_settings()
     return success_envelope(
         request,
@@ -89,6 +94,22 @@ def list_links(
         },
         "links_listed",
         settings,
+    )
+
+
+@router.get(
+    "/admin/stats",
+    response_model=AdminStatsEnvelope,
+    summary="Resumen global de enlaces y visitas (administración)",
+    dependencies=[Depends(require_admin)],
+)
+def get_admin_stats(
+    request: Request, session: Session = Depends(get_db)
+) -> dict[str, Any]:
+    """Devuelve totales SQL; la autenticación se valida antes de consultarlos."""
+
+    return success_envelope(
+        request, services.get_admin_stats(session), "stats_retrieved"
     )
 
 

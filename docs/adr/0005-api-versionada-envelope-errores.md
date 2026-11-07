@@ -43,3 +43,20 @@ localización `es`/`en` y una superficie estable para clientes.
 - Existen dos contratos documentados: heredado y v1.
 - Toda evolución incompatible de v1 deberá incrementar la versión mayor.
 - Los contratos en `specs/` deben actualizarse junto con la implementación.
+
+## Cotejo con el contrato oficial — 2026-11-06
+
+El PDF, pp. 4–5, presenta errors:null como referencia y permite extensiones
+justificadas. v1 conserva errors:[] en éxito y una lista tipada en error:
+evita ramas null/list en clientes y no rompe los contratos existentes. Mantiene
+las cinco claves universales. Es una decisión documentada, no aprobación docente.
+
+PNG (image/png) y 307 sin JSON son representaciones/protocolo HTTP, igual que
+OpenAPI es un documento de esquema y Swagger una herramienta. No hay operaciones
+de negocio que requieran 204/304: no se añaden artificialmente para la rúbrica.
+
+Las rutas heredadas GET / y POST /shorten y algunos errores de GET /s/{code}
+conservan JSON plano/detail. Son una **excepción de compatibilidad**, no una
+excepción propia del protocolo. Su normalización queda para otra versión o
+retirada planificada; el flujo recomendado y el panel consumen exclusivamente v1.
+Se deja este riesgo explícito para evaluación, sin declarar universalidad absoluta.

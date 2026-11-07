@@ -4,13 +4,38 @@ title: "Procesos BPMN"
 
 ## Proceso modelado
 
-Creación de un enlace corto, generación del QR y redirección al destino. El
-modelo usa BPMN 2.0.2 con tres carriles: usuario académico, API y servicio QR.
+El XML BPMN 2.0.2 contiene cuatro procesos independientes: crear enlace, obtener
+QR bajo demanda, redirigir y administrar. Sus carriles describen persona usuaria,
+backend/panel y biblioteca QR local. No existe un microservicio QR externo.
+El análisis textual enlazado identifica participantes, eventos, actividades,
+decisiones, flujos, datos y excepciones antes del diagrama.
 
 - Análisis: [`docs/procesos/analisis-bpmn.md`](sources/docs/procesos/analisis-bpmn.md)
 - XML BPMN: [`docs/procesos/creacion-enlace.bpmn`](sources/docs/procesos/creacion-enlace.bpmn)
 
-## Flujo principal
+## Cuatro vistas formales del XML BPMN
+
+Los SVG siguientes se exportan con bpmn-js desde cada BPMNDiagram y su BPMNDI.
+Conservan los procesos editables; no son ilustraciones redibujadas. Abrir cada
+SVG para ampliarlo. El [manifiesto](diagrams/manifest.json) relaciona fuentes y hashes.
+
+![BPMN: crear enlace](diagrams/bpmn-Diagram_Create.svg)
+
+[Abrir proceso de creación](diagrams/bpmn-Diagram_Create.svg).
+
+![BPMN: obtener QR bajo demanda](diagrams/bpmn-Diagram_QR.svg)
+
+[Abrir proceso QR](diagrams/bpmn-Diagram_QR.svg).
+
+![BPMN: resolver y redirigir](diagrams/bpmn-Diagram_Redirect.svg)
+
+[Abrir proceso de redirección](diagrams/bpmn-Diagram_Redirect.svg).
+
+![BPMN: administrar enlaces](diagrams/bpmn-Diagram_Admin.svg)
+
+[Abrir proceso administrativo](diagrams/bpmn-Diagram_Admin.svg).
+
+## Síntesis de creación (Mermaid, complementaria)
 
 ```{mermaid}
 flowchart LR
@@ -20,20 +45,47 @@ flowchart LR
     D -- No --> E1[Error de validación] --> F1([Fin error])
     D -- Sí --> R[Aplicar reglas]
     R --> G[Generar código]
-    G --> C{¿Código libre?}
-    C -- No, reintentar --> G
-    C -- Sí --> P[Persistir enlace]
-    P --> PP{¿Persistencia OK?}
-    PP -- No --> E2[Revertir y error] --> F2([Fin error])
-    PP -- Sí --> Q[Generar QR]
-    Q --> L[Entregar enlace y QR]
-    L --> A[Acceder por enlace o QR]
-    A --> X[Resolver código]
-    X --> US{¿Activo y vigente?}
-    US -- No --> E3[410 no disponible] --> F3([Fin error])
-    US -- Sí --> K[Registrar clic]
-    K --> RD[Redirigir 307]
-    RD --> OK([Fin exitoso])
+    G --> P[Intentar insertar y confirmar]
+    P --> PP{¿Resultado de persistencia?}
+    PP -- Otro fallo --> E2[Revertir y devolver 500] --> F2([Fin error])
+    PP -- Colisión con rollback --> C{¿Quedan intentos de los diez?}
+    C -- Sí --> G
+    C -- No --> E3[Devolver 409] --> F3([Fin por colisiones])
+    PP -- Commit confirmado --> L[Devolver 201 con URL corta y qr_url]
+    L --> OK([Enlace creado sin PNG])
+```
+
+El reintento real ocurre tras una colisión de unicidad en SQL con rollback y está
+limitado a diez intentos; se devuelve 409 al agotarlos. La figura resume ese ciclo.
+
+## QR y redirección: peticiones separadas
+
+```{mermaid}
+flowchart LR
+    Q[Solicitar PNG] --> V[Resolver y validar estado]
+    V --> G[Generar PNG con URL corta]
+    G --> P[Entregar image/png sin contar visita]
+    A[Abrir URL corta] --> X[Resolver código y estado]
+    X --> K[Intentar incrementar visitas]
+    K --> R[Devolver 307 con Location]
+    R --> B[Seguir Location en el navegador]
+```
+
+El código inexistente produce 404; inactivo/caducado, 410. Un fallo del contador
+no impide redirigir y no se registra un evento individual de visita.
+
+## Administración
+
+```{mermaid}
+flowchart LR
+    A[Introducir clave en memoria] --> V[Validar GET protegido del listado]
+    V --> Q[Consultar resumen y lista paginada]
+    Q --> E[Editar estado o caducidad]
+    E --> C{Confirmar cambios}
+    C -- Sí --> P[Revalidar clave y aplicar PATCH]
+    P --> Q
+    C -- Cancelar --> Q
+    Q --> S[Cerrar sesión y descartar clave]
 ```
 
 ## Participantes
@@ -42,15 +94,16 @@ flowchart LR
 |--------|-------------|
 | Usuario académico | Introducir URL, recibir enlace, acceder por enlace o QR. |
 | API UniShort QR | Validar, aplicar reglas, generar código, persistir, resolver, registrar clic y redirigir. |
-| Servicio QR | Generar el PNG y entregarlo. |
+| Biblioteca QR del backend | Generar el PNG en memoria bajo demanda. |
+| Administrador técnico | Acceder, buscar/filtrar, editar, confirmar y cerrar sesión. |
 
 ## Decisiones del proceso
 
 | Compuerta | Condición | Resultado |
 |-----------|-----------|-----------|
 | ¿URL válida? | Esquema, host, longitud y credenciales | Continúa o error 4xx. |
-| ¿Código libre? | Unicidad en base de datos | Persiste o reintenta (máx. 10). |
-| ¿Persistencia correcta? | Commit confirmado | Genera QR o revierte. |
+| ¿Resultado de persistencia? | Restricción de unicidad SQL y commit | Devuelve 201, reintenta tras colisión (máx. 10) o revierte. |
+| ¿Persistencia correcta? | Commit confirmado | Devuelve 201 JSON o revierte; no genera QR. |
 | ¿Enlace utilizable? | `is_active` y `expires_at` | Redirige o responde 410. |
 
 ## Excepciones cubiertas
@@ -73,3 +126,9 @@ flowchart LR
 | Generar QR | `backend/app/qr.py` |
 | Resolver y redirigir | `backend/app/main.py`, `services.py` |
 | Errores | `backend/app/errors.py`, `i18n.py`, `main.py` |
+| Gestionar enlaces | `frontend/admin.mjs`, `api/deps.py`, `services.update_link_state` |
+
+Pruebas: tests/unit/test_documentation_models.py verifica semántica básica, DI,
+referencias y nombres de tareas en infinitivo. El exportador rechaza advertencias
+de importación; no equivale a validación XSD o semántica exhaustiva. Estado efectivo
+del render y revisión visual en [resultados](paquete/resultados-verificacion.qmd).

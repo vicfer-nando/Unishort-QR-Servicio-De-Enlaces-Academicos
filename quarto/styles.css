@@ -1,0 +1,16 @@
+:root { --unishort-green: #156044; --unishort-pale: #eaf4ee; }
+.navbar { background: var(--unishort-green); }
+.navbar .navbar-brand, .navbar .nav-link { color: #fff; }
+.navbar .nav-link.active, .navbar .nav-link:hover { color: #e2f3b2; }
+a { color: #12553c; text-underline-offset: .16em; }
+a:hover { color: #083322; }
+h1, h2, h3 { color: #174c38; }
+.sidebar-item-container .active { color: #12553c; font-weight: 650; }
+blockquote { border-left: .25rem solid var(--unishort-green); background: var(--unishort-pale); padding: .8rem 1rem; }
+.diagram-scroll { overflow: auto; border: 1px solid #c7d8ce; border-radius: .5rem; padding: 1rem; margin-block: 1rem; background: #fff; }
+.diagram-scroll img { max-width: none; width: auto; max-height: 1000px; }
+figure img { background: white; }
+table { font-size: .94rem; }
+pre { border-radius: .4rem; }
+:focus-visible { outline: 3px solid #a26c00; outline-offset: 3px; }
+@media (max-width: 760px) { table { font-size: .85rem; } .diagram-scroll { padding: .3rem; } }

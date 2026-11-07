@@ -1,57 +1,47 @@
 ---
 title: "UniShort QR"
+subtitle: "Enlaces académicos cortos y códigos QR"
 ---
 
-## Qué es
+## Problema y contexto
 
-UniShort QR es un servicio académico de acortamiento de enlaces y generación de
-códigos QR para la Universidad Nacional de Loja. Este portal documenta el
-incremento funcional de la **Evaluación Sumativa 1**.
+Compartir direcciones académicas extensas dificulta su transcripción, su inclusión
+en presentaciones y el acceso desde material impreso. UniShort QR ofrece enlaces
+cortos persistentes y códigos QR que apuntan a esos enlaces. Es un proyecto de la
+**Evaluación Sumativa 1 de la Universidad Nacional de Loja**, entrega 6 de noviembre
+de 2026; no representa aprobación, patrocinio ni integración institucional.
 
-> Proyecto académico. No representa una aprobación oficial de la universidad.
+## Objetivos y alcance
 
-## Alcance del incremento
+Crear, compartir y resolver enlaces; generar PNG QR bajo demanda; conservar registros
+con migraciones; gestionar estado, caducidad y visitas desde un panel autorizado.
+El incremento mantiene FastAPI, SQLAlchemy y SQLite con frontend HTML/CSS/JavaScript.
+No recopila eventos individuales de visitantes, aunque una URL introducida puede
+contener datos sensibles. No incluye usuarios/roles institucionales ni despliegue
+de producción acreditado.
 
-| Capacidad | Estado | Evidencia |
-|-----------|--------|-----------|
-| Crear enlaces cortos únicos | Implementado | `POST /api/v1/links` |
-| Redirección sin cuerpo JSON | Implementado | `GET /s/{short_code}` → `307` |
-| QR con la URL corta | Implementado | `GET /api/v1/links/{code}/qr` |
-| Caducidad y desactivación | Implementado | `expires_at`, `is_active` |
-| Métricas agregadas sin PII | Implementado | `click_count` |
-| Autenticación administrativa provisional | Implementado | `X-Admin-API-Key` |
-| Health check | Implementado | `GET /health` |
-| Compatibilidad heredada | Conservada | `POST /shorten` |
-| PostgreSQL en producción | Documentado | ADR 0002 |
-| Integración institucional de identidad | Pendiente | Sin especificación aprobada |
+| Actor | Necesidad | Recorrido |
+|---|---|---|
+| Usuario académico | Compartir un recurso mediante un enlace breve o QR | Crear → descargar/compartir. |
+| Visitante | Acceder al destino desde enlace o QR | Resolver → seguir redirección en navegador. |
+| Administrador técnico | Consultar y gestionar enlaces | Acceso provisional → resumen/listado → cambios confirmados. |
+| Docente evaluador | Verificar requisitos, calidad y aportes | Especificación → modelo → código/API → pruebas → evidencia individual. |
 
-## Inicio rápido
+## Consultar y reproducir
 
-```powershell
-python -m pip install -r backend\requirements-dev.txt
-$env:UNISHORT_ADMIN_API_KEY = "dev-admin-cambiar-en-produccion"
-python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
-```
+- [Requisitos y trazabilidad](requisitos.qmd): historias, aceptación y Spec Kit.
+- [Procesos](procesos.qmd) y [arquitectura C1–C4](arquitectura.qmd): fuentes formales y diagramas.
+- [API](api.qmd), [panel](administracion.qmd) y [seguridad](seguridad.qmd): contratos y controles reales.
+- [Pruebas](pruebas.qmd) y [despliegue](despliegue.qmd): comandos y límites de verificación.
+- [Evolución](evolucion.qmd), [contribuciones/IA](contribuciones.qmd) y [dossier EVA](paquete/README.qmd).
 
-- Swagger: <http://127.0.0.1:8000/docs>
-- Health: <http://127.0.0.1:8000/health>
-- Frontend: `python scripts/serve_frontend.py`
+> Los resultados actuales, publicación y pendientes se mantienen en
+> [el registro de esta preparación](paquete/resultados-verificacion.qmd).
+> Un workflow preparado o una URL esperada no equivalen a un portal publicado.
 
-## Navegación
+## Fuentes de autoridad
 
-- [Requisitos](requisitos.qmd): historias, requisitos funcionales y criterios.
-- [Arquitectura](arquitectura.qmd): C4 y decisiones.
-- [Procesos](procesos.qmd): BPMN de creación y uso.
-- [API](api.qmd): endpoints y envelope.
-- [Pruebas](pruebas.qmd): suite, cobertura y evidencia.
-- [Entrega](entrega.qmd): trazabilidad y pendientes.
-
-## Referencias del repositorio
-
-- [`README.md`](sources/README.md)
-- [`specs/001-create-short-link/spec.md`](sources/specs/001-create-short-link/spec.md)
-- [`specs/001-create-short-link/contracts/v1-links.md`](sources/specs/001-create-short-link/contracts/v1-links.md)
-- [`specs/002-generate-qr/spec.md`](sources/specs/002-generate-qr/spec.md)
-- [`docs/adr/`](sources/docs/adr/)
-- [`docs/procesos/creacion-enlace.bpmn`](sources/docs/procesos/creacion-enlace.bpmn)
-- [`docs/arquitectura/unishort-c4.dsl`](sources/docs/arquitectura/unishort-c4.dsl)
+[PDF oficial completo](sources/Asignaci%C3%B3n_Y_Rubrica_Evaluaci%C3%B3n_Sumativa_1.pdf),
+[auditoría técnica previa](auditoria.qmd), [constitution](sources/constitution.md),
+[README](sources/README.md) y [especificaciones](requisitos.qmd).
+El PDF prevalece sobre documentos anteriores; la calificación final pertenece al docente.

@@ -49,6 +49,10 @@ def verify(client, key, database):
     admin = {"X-Admin-API-Key": key}
     origin = {"Origin": "http://localhost:5500"}
     assert client.get("http://localhost:5500").status_code == 200
+    assert client.get("http://localhost:5500/admin.html").status_code == 200
+    module = client.get("http://localhost:5500/admin.mjs")
+    assert module.status_code == 200
+    assert "javascript" in module.headers["content-type"]
     assert client.get("/docs").status_code == 200
     assert "/api/v1/links" in client.get("/openapi.json").json()["paths"]
     created = client.post(
@@ -77,6 +81,19 @@ def verify(client, key, database):
         client.get(stats, headers={"X-Admin-API-Key": "incorrecta"}).status_code == 403
     )
     assert client.get("/api/v1/links", headers=admin).status_code == 200
+    summary = client.get("/api/v1/admin/stats", headers=admin)
+    assert summary.status_code == 200
+    assert summary.headers["cache-control"] == "no-store"
+    assert summary.json()["data"]["total_links"] == 1
+    assert summary.json()["data"]["total_visits"] == 1
+    assert client.get("/api/v1/admin/stats").status_code == 401
+    filtered = client.get(
+        "/api/v1/links",
+        params={"q": code, "status": "active", "limit": 1},
+        headers=admin,
+    )
+    assert filtered.json()["data"]["total"] == 1
+    assert filtered.json()["data"]["items"][0]["short_code"] == code
     assert client.get("/s/nonexistent").status_code == 404
     for url in (
         "not-a-url",

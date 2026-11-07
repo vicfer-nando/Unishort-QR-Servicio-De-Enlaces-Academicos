@@ -1,8 +1,12 @@
 project:
   type: website
   output-dir: _site
+  render:
+    - "*.qmd"
+    - "paquete/*.qmd"
   resources:
     - sources/**
+    - diagrams/**
 
 website:
   title: "UniShort QR"
@@ -11,18 +15,15 @@ website:
     left:
       - href: index.qmd
         text: Inicio
-      - href: requisitos.qmd
-        text: Requisitos
-      - href: arquitectura.qmd
-        text: Arquitectura
-      - href: procesos.qmd
-        text: Procesos
       - href: api.qmd
         text: API
-      - href: pruebas.qmd
-        text: Pruebas
-      - href: entrega.qmd
-        text: Entrega
+      - href: administracion.qmd
+        text: Administración
+      - href: paquete/README.qmd
+        text: Entrega EVA
+    right:
+      - href: https://github.com/vicfer-nando/Unishort-QR-Servicio-De-Enlaces-Academicos
+        text: Repositorio
   sidebar:
     style: docked
     contents:
@@ -31,8 +32,28 @@ website:
       - arquitectura.qmd
       - procesos.qmd
       - api.qmd
+      - administracion.qmd
+      - seguridad.qmd
       - pruebas.qmd
+      - despliegue.qmd
+      - evolucion.qmd
+      - contribuciones.qmd
       - entrega.qmd
+      - auditoria.qmd
+      - section: Dossier final
+        contents:
+          - paquete/README.qmd
+          - paquete/matriz-rubrica-final.qmd
+          - paquete/guion-demostracion.qmd
+          - paquete/evidencias-capturas.qmd
+          - paquete/evidencias-automaticas.qmd
+          - paquete/contribuciones-individuales.qmd
+          - paquete/declaracion-uso-ia.qmd
+          - paquete/instrucciones-reproduccion.qmd
+          - paquete/publicacion-quarto.qmd
+          - paquete/integracion-y-checklist.qmd
+          - paquete/resultados-verificacion.qmd
+          - paquete/texto-entrega-eva.qmd
 
 format:
   html:
@@ -42,6 +63,7 @@ format:
     lang: es
     code-copy: true
     code-overflow: wrap
+    css: styles.css
 
 execute:
   enabled: false

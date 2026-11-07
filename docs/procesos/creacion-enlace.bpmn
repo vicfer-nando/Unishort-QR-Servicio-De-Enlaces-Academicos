@@ -1,437 +1,982 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions
-    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
-    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    id="Definitions_UniShort"
-    targetNamespace="http://unl.edu.ec/unishort/bpmn"
-    exporter="UniShort QR"
-    exporterVersion="1.0">
-
-  <bpmn:collaboration id="Collaboration_CreateLink" name="Creación y uso de enlace corto">
-    <bpmn:participant id="Participant_UniShort" name="UniShort QR" processRef="Process_CreateLink" />
+<?xml version='1.0' encoding='utf-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_UniShort" targetNamespace="https://unishort.example/bpmn" exporter="UniShort QR" exporterVersion="2026-11-06">
+  <bpmn:collaboration id="Collaboration_Create">
+    <bpmn:participant id="Participant_Create" name="Crear enlace corto (POST /api/v1/links)" processRef="Process_Create" />
   </bpmn:collaboration>
-
-  <bpmn:process id="Process_CreateLink" name="Crear enlace corto, generar QR y redirigir" isExecutable="true">
-
-    <bpmn:documentation>
-      Proceso de negocio para crear un enlace corto único, generar su código QR,
-      entregarlo al usuario y redirigir al destino original cuando el enlace esté
-      activo y vigente. No se almacenan datos personales de los visitantes.
-    </bpmn:documentation>
-
-    <bpmn:laneSet id="LaneSet_CreateLink">
-      <bpmn:lane id="Lane_User" name="Usuario académico">
-        <bpmn:flowNodeRef>StartEvent_Need</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_EnterURL</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_ReceiveLink</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_UseLink</bpmn:flowNodeRef>
+  <bpmn:process id="Process_Create" name="Crear enlace corto (POST /api/v1/links)" isExecutable="false">
+    <bpmn:documentation>Flujo público sin autenticación. Unicidad en SQL; hasta diez intentos. Devuelve qr_url, no PNG. No se consulta el destino.</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet_Create">
+      <bpmn:lane id="Lane_Create_user" name="Persona usuaria / administrador">
+        <bpmn:flowNodeRef>Create_Start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Input</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Display</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_End</bpmn:flowNodeRef>
       </bpmn:lane>
-      <bpmn:lane id="Lane_API" name="API UniShort QR">
-        <bpmn:flowNodeRef>Task_Validate</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Gateway_Valid</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_DomainRules</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_GenerateCode</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Gateway_Collision</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_Persist</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Gateway_Persistence</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_ReturnLink</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_ResolveCode</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Gateway_Usable</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_RegisterClick</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_Redirect</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_ReturnValidationError</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>EndEvent_Invalid</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_ReturnPersistenceError</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>EndEvent_Error</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_ReturnGone</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>EndEvent_Gone</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>EndEvent_Success</bpmn:flowNodeRef>
+      <bpmn:lane id="Lane_Create_api" name="Backend FastAPI y panel web">
+        <bpmn:flowNodeRef>Create_Validate</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Valid</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Generate</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Persist</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Result</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Retry</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Return</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Invalid</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_InvalidEnd</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Conflict</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_Failure</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Create_FailureEnd</bpmn:flowNodeRef>
       </bpmn:lane>
-      <bpmn:lane id="Lane_QR" name="Servicio QR">
-        <bpmn:flowNodeRef>Task_GenerateQR</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_DeliverQR</bpmn:flowNodeRef>
+      <bpmn:lane id="Lane_Create_qr" name="Biblioteca QR local (mismo backend)" />
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Create_Start" name="Necesidad de compartir un recurso">
+      <bpmn:outgoing>Create_flow_0</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Create_Input" name="Introducir URL y caducidad opcional">
+      <bpmn:incoming>Create_flow_0</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_1</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Create_Validate" name="Validar solicitud y aplicar límite">
+      <bpmn:incoming>Create_flow_1</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Create_Valid" name="¿Solicitud aceptada?" default="Create_flow_4">
+      <bpmn:incoming>Create_flow_2</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_3</bpmn:outgoing>
+      <bpmn:outgoing>Create_flow_4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Create_Generate" name="Generar código aleatorio">
+      <bpmn:incoming>Create_flow_3</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_6</bpmn:outgoing>
+      <bpmn:incoming>Create_flow_11</bpmn:incoming>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Create_Persist" name="Intentar insertar y confirmar enlace">
+      <bpmn:incoming>Create_flow_6</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Create_Result" name="¿Resultado de persistencia?" default="Create_flow_10">
+      <bpmn:incoming>Create_flow_7</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_8</bpmn:outgoing>
+      <bpmn:outgoing>Create_flow_9</bpmn:outgoing>
+      <bpmn:outgoing>Create_flow_10</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Create_Retry" name="¿Quedan intentos de los diez?" default="Create_flow_12">
+      <bpmn:incoming>Create_flow_9</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_11</bpmn:outgoing>
+      <bpmn:outgoing>Create_flow_12</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Create_Return" name="Devolver 201 con URL corta y qr_url">
+      <bpmn:incoming>Create_flow_8</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_15</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Create_Display" name="Consultar enlace creado">
+      <bpmn:incoming>Create_flow_15</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_16</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="Create_End" name="Enlace creado sin generar PNG">
+      <bpmn:incoming>Create_flow_16</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Create_Invalid" name="Devolver 400, 422 o 429 sin insertar">
+      <bpmn:incoming>Create_flow_4</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Create_InvalidEnd" name="Solicitud rechazada">
+      <bpmn:incoming>Create_flow_5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Create_Conflict" name="Devolver 409 tras agotar colisiones">
+      <bpmn:incoming>Create_flow_12</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_13</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Create_Failure" name="Revertir y devolver error 500">
+      <bpmn:incoming>Create_flow_10</bpmn:incoming>
+      <bpmn:outgoing>Create_flow_14</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Create_FailureEnd" name="Creación no confirmada">
+      <bpmn:incoming>Create_flow_13</bpmn:incoming>
+      <bpmn:incoming>Create_flow_14</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Create_flow_0" sourceRef="Create_Start" targetRef="Create_Input" />
+    <bpmn:sequenceFlow id="Create_flow_1" sourceRef="Create_Input" targetRef="Create_Validate" />
+    <bpmn:sequenceFlow id="Create_flow_2" sourceRef="Create_Validate" targetRef="Create_Valid" />
+    <bpmn:sequenceFlow id="Create_flow_3" sourceRef="Create_Valid" targetRef="Create_Generate" name="Aceptada" />
+    <bpmn:sequenceFlow id="Create_flow_4" sourceRef="Create_Valid" targetRef="Create_Invalid" name="Por defecto" />
+    <bpmn:sequenceFlow id="Create_flow_5" sourceRef="Create_Invalid" targetRef="Create_InvalidEnd" />
+    <bpmn:sequenceFlow id="Create_flow_6" sourceRef="Create_Generate" targetRef="Create_Persist" />
+    <bpmn:sequenceFlow id="Create_flow_7" sourceRef="Create_Persist" targetRef="Create_Result" />
+    <bpmn:sequenceFlow id="Create_flow_8" sourceRef="Create_Result" targetRef="Create_Return" name="Commit confirmado" />
+    <bpmn:sequenceFlow id="Create_flow_9" sourceRef="Create_Result" targetRef="Create_Retry" name="IntegrityError y rollback" />
+    <bpmn:sequenceFlow id="Create_flow_10" sourceRef="Create_Result" targetRef="Create_Failure" name="Por defecto" />
+    <bpmn:sequenceFlow id="Create_flow_11" sourceRef="Create_Retry" targetRef="Create_Generate" name="Intentos &lt; 10" />
+    <bpmn:sequenceFlow id="Create_flow_12" sourceRef="Create_Retry" targetRef="Create_Conflict" name="Por defecto" />
+    <bpmn:sequenceFlow id="Create_flow_13" sourceRef="Create_Conflict" targetRef="Create_FailureEnd" />
+    <bpmn:sequenceFlow id="Create_flow_14" sourceRef="Create_Failure" targetRef="Create_FailureEnd" />
+    <bpmn:sequenceFlow id="Create_flow_15" sourceRef="Create_Return" targetRef="Create_Display" />
+    <bpmn:sequenceFlow id="Create_flow_16" sourceRef="Create_Display" targetRef="Create_End" />
+  </bpmn:process>
+  <bpmn:collaboration id="Collaboration_QR">
+    <bpmn:participant id="Participant_QR" name="Obtener PNG bajo demanda (GET /api/v1/links/{code}/qr)" processRef="Process_QR" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_QR" name="Obtener PNG bajo demanda (GET /api/v1/links/{code}/qr)" isExecutable="false">
+    <bpmn:documentation>Solicitud independiente de la creación. Biblioteca QR en el mismo backend; contenido igual a short_url. Fallo de generación: 500 controlado.</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet_QR">
+      <bpmn:lane id="Lane_QR_user" name="Persona usuaria / administrador">
+        <bpmn:flowNodeRef>QR_Start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>QR_Request</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>QR_End</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_QR_api" name="Backend FastAPI y panel web">
+        <bpmn:flowNodeRef>QR_Resolve</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>QR_Usable</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>QR_Deliver</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>QR_Error</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>QR_ErrorEnd</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_QR_qr" name="Biblioteca QR local (mismo backend)">
+        <bpmn:flowNodeRef>QR_Generate</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
-
-    <bpmn:startEvent id="StartEvent_Need" name="Necesidad de compartir un recurso académico">
-      <bpmn:outgoing>Flow_Start_Enter</bpmn:outgoing>
+    <bpmn:startEvent id="QR_Start" name="Necesidad de ver o descargar QR">
+      <bpmn:outgoing>QR_flow_0</bpmn:outgoing>
     </bpmn:startEvent>
-
-    <bpmn:userTask id="Task_EnterURL" name="Introducir la URL de destino">
-      <bpmn:incoming>Flow_Start_Enter</bpmn:incoming>
-      <bpmn:outgoing>Flow_Enter_Validate</bpmn:outgoing>
+    <bpmn:userTask id="QR_Request" name="Solicitar código QR">
+      <bpmn:incoming>QR_flow_0</bpmn:incoming>
+      <bpmn:outgoing>QR_flow_1</bpmn:outgoing>
     </bpmn:userTask>
-
-    <bpmn:serviceTask id="Task_Validate" name="Validar la solicitud">
-      <bpmn:incoming>Flow_Enter_Validate</bpmn:incoming>
-      <bpmn:outgoing>Flow_Validate_Gateway</bpmn:outgoing>
+    <bpmn:serviceTask id="QR_Resolve" name="Resolver código y comprobar estado">
+      <bpmn:incoming>QR_flow_1</bpmn:incoming>
+      <bpmn:outgoing>QR_flow_2</bpmn:outgoing>
     </bpmn:serviceTask>
-
-    <bpmn:exclusiveGateway id="Gateway_Valid" name="¿URL válida?" default="Flow_Gateway_Invalid">
-      <bpmn:incoming>Flow_Validate_Gateway</bpmn:incoming>
-      <bpmn:outgoing>Flow_Gateway_Valid</bpmn:outgoing>
-      <bpmn:outgoing>Flow_Gateway_Invalid</bpmn:outgoing>
+    <bpmn:exclusiveGateway id="QR_Usable" name="¿Enlace existente, activo y vigente?" default="QR_flow_4">
+      <bpmn:incoming>QR_flow_2</bpmn:incoming>
+      <bpmn:outgoing>QR_flow_3</bpmn:outgoing>
+      <bpmn:outgoing>QR_flow_4</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-
-    <bpmn:serviceTask id="Task_DomainRules" name="Aplicar reglas de negocio y normalizar">
-      <bpmn:incoming>Flow_Gateway_Valid</bpmn:incoming>
-      <bpmn:outgoing>Flow_Domain_Generate</bpmn:outgoing>
+    <bpmn:serviceTask id="QR_Generate" name="Generar PNG con la URL corta">
+      <bpmn:incoming>QR_flow_3</bpmn:incoming>
+      <bpmn:outgoing>QR_flow_5</bpmn:outgoing>
     </bpmn:serviceTask>
-
-    <bpmn:serviceTask id="Task_GenerateCode" name="Generar código corto único">
-      <bpmn:incoming>Flow_Domain_Generate</bpmn:incoming>
-      <bpmn:incoming>Flow_Collision_Retry</bpmn:incoming>
-      <bpmn:outgoing>Flow_Generate_CollisionGateway</bpmn:outgoing>
+    <bpmn:serviceTask id="QR_Deliver" name="Entregar PNG sin incrementar visitas">
+      <bpmn:incoming>QR_flow_5</bpmn:incoming>
+      <bpmn:outgoing>QR_flow_6</bpmn:outgoing>
     </bpmn:serviceTask>
-
-    <bpmn:exclusiveGateway id="Gateway_Collision" name="¿Código libre?" default="Flow_Collision_Retry">
-      <bpmn:incoming>Flow_Generate_CollisionGateway</bpmn:incoming>
-      <bpmn:outgoing>Flow_Collision_Free</bpmn:outgoing>
-      <bpmn:outgoing>Flow_Collision_Retry</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-
-    <bpmn:serviceTask id="Task_Persist" name="Persistir enlace y estado">
-      <bpmn:incoming>Flow_Collision_Free</bpmn:incoming>
-      <bpmn:outgoing>Flow_Persist_Gateway</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:exclusiveGateway id="Gateway_Persistence" name="¿Persistencia correcta?" default="Flow_Persistence_Failed">
-      <bpmn:incoming>Flow_Persist_Gateway</bpmn:incoming>
-      <bpmn:outgoing>Flow_Persistence_Ok</bpmn:outgoing>
-      <bpmn:outgoing>Flow_Persistence_Failed</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-
-    <bpmn:serviceTask id="Task_GenerateQR" name="Generar QR con la URL corta">
-      <bpmn:incoming>Flow_Persistence_Ok</bpmn:incoming>
-      <bpmn:outgoing>Flow_QR_Deliver</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:serviceTask id="Task_DeliverQR" name="Entregar PNG del QR">
-      <bpmn:incoming>Flow_QR_Deliver</bpmn:incoming>
-      <bpmn:outgoing>Flow_Deliver_ReturnLink</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:serviceTask id="Task_ReturnLink" name="Devolver enlace corto y datos del QR">
-      <bpmn:incoming>Flow_Deliver_ReturnLink</bpmn:incoming>
-      <bpmn:outgoing>Flow_Return_Receive</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:userTask id="Task_ReceiveLink" name="Recibir el enlace corto">
-      <bpmn:incoming>Flow_Return_Receive</bpmn:incoming>
-      <bpmn:outgoing>Flow_Receive_Use</bpmn:outgoing>
-    </bpmn:userTask>
-
-    <bpmn:userTask id="Task_UseLink" name="Acceder mediante enlace o QR">
-      <bpmn:incoming>Flow_Receive_Use</bpmn:incoming>
-      <bpmn:outgoing>Flow_Use_Resolve</bpmn:outgoing>
-    </bpmn:userTask>
-
-    <bpmn:serviceTask id="Task_ResolveCode" name="Resolver el código corto">
-      <bpmn:incoming>Flow_Use_Resolve</bpmn:incoming>
-      <bpmn:outgoing>Flow_Resolve_UsableGateway</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:exclusiveGateway id="Gateway_Usable" name="¿Enlace activo y vigente?" default="Flow_Usable_No">
-      <bpmn:incoming>Flow_Resolve_UsableGateway</bpmn:incoming>
-      <bpmn:outgoing>Flow_Usable_Yes</bpmn:outgoing>
-      <bpmn:outgoing>Flow_Usable_No</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-
-    <bpmn:serviceTask id="Task_RegisterClick" name="Registrar clic agregado">
-      <bpmn:incoming>Flow_Usable_Yes</bpmn:incoming>
-      <bpmn:outgoing>Flow_Register_Redirect</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:serviceTask id="Task_Redirect" name="Redirigir al destino original">
-      <bpmn:incoming>Flow_Register_Redirect</bpmn:incoming>
-      <bpmn:outgoing>Flow_Redirect_End</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:endEvent id="EndEvent_Success" name="Redirección completada">
-      <bpmn:incoming>Flow_Redirect_End</bpmn:incoming>
+    <bpmn:endEvent id="QR_End" name="PNG disponible">
+      <bpmn:incoming>QR_flow_6</bpmn:incoming>
     </bpmn:endEvent>
-
-    <bpmn:serviceTask id="Task_ReturnValidationError" name="Devolver error de validación">
-      <bpmn:incoming>Flow_Gateway_Invalid</bpmn:incoming>
-      <bpmn:outgoing>Flow_Invalid_End</bpmn:outgoing>
+    <bpmn:serviceTask id="QR_Error" name="Devolver 404 o 410 con envelope">
+      <bpmn:incoming>QR_flow_4</bpmn:incoming>
+      <bpmn:outgoing>QR_flow_7</bpmn:outgoing>
     </bpmn:serviceTask>
-
-    <bpmn:endEvent id="EndEvent_Invalid" name="URL inválida rechazada">
-      <bpmn:incoming>Flow_Invalid_End</bpmn:incoming>
+    <bpmn:endEvent id="QR_ErrorEnd" name="QR rechazado">
+      <bpmn:incoming>QR_flow_7</bpmn:incoming>
     </bpmn:endEvent>
-
-    <bpmn:serviceTask id="Task_ReturnPersistenceError" name="Revertir y devolver error de persistencia">
-      <bpmn:incoming>Flow_Persistence_Failed</bpmn:incoming>
-      <bpmn:outgoing>Flow_PersistenceError_End</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:endEvent id="EndEvent_Error" name="Fallo de persistencia">
-      <bpmn:incoming>Flow_PersistenceError_End</bpmn:incoming>
-    </bpmn:endEvent>
-
-    <bpmn:serviceTask id="Task_ReturnGone" name="Devolver error de enlace no disponible">
-      <bpmn:incoming>Flow_Usable_No</bpmn:incoming>
-      <bpmn:outgoing>Flow_Gone_End</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:endEvent id="EndEvent_Gone" name="Enlace desactivado o caducado">
-      <bpmn:incoming>Flow_Gone_End</bpmn:incoming>
-    </bpmn:endEvent>
-
-    <bpmn:sequenceFlow id="Flow_Start_Enter" sourceRef="StartEvent_Need" targetRef="Task_EnterURL" />
-    <bpmn:sequenceFlow id="Flow_Enter_Validate" sourceRef="Task_EnterURL" targetRef="Task_Validate" />
-    <bpmn:sequenceFlow id="Flow_Validate_Gateway" sourceRef="Task_Validate" targetRef="Gateway_Valid" />
-
-    <bpmn:sequenceFlow id="Flow_Gateway_Valid" name="Sí" sourceRef="Gateway_Valid" targetRef="Task_DomainRules">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${urlValida}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Gateway_Invalid" name="No" sourceRef="Gateway_Valid" targetRef="Task_ReturnValidationError">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!urlValida}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-
-    <bpmn:sequenceFlow id="Flow_Domain_Generate" sourceRef="Task_DomainRules" targetRef="Task_GenerateCode" />
-    <bpmn:sequenceFlow id="Flow_Generate_CollisionGateway" sourceRef="Task_GenerateCode" targetRef="Gateway_Collision" />
-    <bpmn:sequenceFlow id="Flow_Collision_Free" name="Libre" sourceRef="Gateway_Collision" targetRef="Task_Persist">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${codigoLibre}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Collision_Retry" name="Colisión (máx. 10)" sourceRef="Gateway_Collision" targetRef="Task_GenerateCode">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${colision}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-
-    <bpmn:sequenceFlow id="Flow_Persist_Gateway" sourceRef="Task_Persist" targetRef="Gateway_Persistence" />
-    <bpmn:sequenceFlow id="Flow_Persistence_Ok" name="Correcta" sourceRef="Gateway_Persistence" targetRef="Task_GenerateQR">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${persistenciaOk}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Persistence_Failed" name="Fallida" sourceRef="Gateway_Persistence" targetRef="Task_ReturnPersistenceError">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!persistenciaOk}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-
-    <bpmn:sequenceFlow id="Flow_QR_Deliver" sourceRef="Task_GenerateQR" targetRef="Task_DeliverQR" />
-    <bpmn:sequenceFlow id="Flow_Deliver_ReturnLink" sourceRef="Task_DeliverQR" targetRef="Task_ReturnLink" />
-    <bpmn:sequenceFlow id="Flow_Return_Receive" sourceRef="Task_ReturnLink" targetRef="Task_ReceiveLink" />
-    <bpmn:sequenceFlow id="Flow_Receive_Use" sourceRef="Task_ReceiveLink" targetRef="Task_UseLink" />
-    <bpmn:sequenceFlow id="Flow_Use_Resolve" sourceRef="Task_UseLink" targetRef="Task_ResolveCode" />
-    <bpmn:sequenceFlow id="Flow_Resolve_UsableGateway" sourceRef="Task_ResolveCode" targetRef="Gateway_Usable" />
-
-    <bpmn:sequenceFlow id="Flow_Usable_Yes" name="Sí" sourceRef="Gateway_Usable" targetRef="Task_RegisterClick">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${enlaceUtilizable}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Usable_No" name="No" sourceRef="Gateway_Usable" targetRef="Task_ReturnGone">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!enlaceUtilizable}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-
-    <bpmn:sequenceFlow id="Flow_Register_Redirect" sourceRef="Task_RegisterClick" targetRef="Task_Redirect" />
-    <bpmn:sequenceFlow id="Flow_Redirect_End" sourceRef="Task_Redirect" targetRef="EndEvent_Success" />
-    <bpmn:sequenceFlow id="Flow_Invalid_End" sourceRef="Task_ReturnValidationError" targetRef="EndEvent_Invalid" />
-    <bpmn:sequenceFlow id="Flow_PersistenceError_End" sourceRef="Task_ReturnPersistenceError" targetRef="EndEvent_Error" />
-    <bpmn:sequenceFlow id="Flow_Gone_End" sourceRef="Task_ReturnGone" targetRef="EndEvent_Gone" />
-
+    <bpmn:sequenceFlow id="QR_flow_0" sourceRef="QR_Start" targetRef="QR_Request" />
+    <bpmn:sequenceFlow id="QR_flow_1" sourceRef="QR_Request" targetRef="QR_Resolve" />
+    <bpmn:sequenceFlow id="QR_flow_2" sourceRef="QR_Resolve" targetRef="QR_Usable" />
+    <bpmn:sequenceFlow id="QR_flow_3" sourceRef="QR_Usable" targetRef="QR_Generate" name="Sí" />
+    <bpmn:sequenceFlow id="QR_flow_4" sourceRef="QR_Usable" targetRef="QR_Error" name="Por defecto" />
+    <bpmn:sequenceFlow id="QR_flow_5" sourceRef="QR_Generate" targetRef="QR_Deliver" />
+    <bpmn:sequenceFlow id="QR_flow_6" sourceRef="QR_Deliver" targetRef="QR_End" />
+    <bpmn:sequenceFlow id="QR_flow_7" sourceRef="QR_Error" targetRef="QR_ErrorEnd" />
   </bpmn:process>
-
-  <bpmndi:BPMNDiagram id="BPMNDiagram_CreateLink">
-    <bpmndi:BPMNPlane id="BPMNPlane_CreateLink" bpmnElement="Collaboration_CreateLink">
-
-      <bpmndi:BPMNShape id="Shape_Participant_UniShort" bpmnElement="Participant_UniShort" isHorizontal="true">
-        <dc:Bounds x="40" y="40" width="2200" height="560" />
+  <bpmn:collaboration id="Collaboration_Redirect">
+    <bpmn:participant id="Participant_Redirect" name="Redirigir enlace corto (GET /s/{code})" processRef="Process_Redirect" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Redirect" name="Redirigir enlace corto (GET /s/{code})" isExecutable="false">
+    <bpmn:documentation>No se obtiene contenido del destino. Un error del contador se registra sin PII y no impide redirigir. Nunca se persisten eventos individuales.</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet_Redirect">
+      <bpmn:lane id="Lane_Redirect_user" name="Persona usuaria / administrador">
+        <bpmn:flowNodeRef>Redirect_Start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Redirect_End</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Redirect_api" name="Backend FastAPI y panel web">
+        <bpmn:flowNodeRef>Redirect_Resolve</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Redirect_Found</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Redirect_Usable</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Redirect_Count</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Redirect_Redirect</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Redirect_Missing</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Redirect_Gone</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Redirect_ErrorEnd</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Redirect_qr" name="Biblioteca QR local (mismo backend)" />
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Redirect_Start" name="Acceso al enlace corto o QR escaneado">
+      <bpmn:outgoing>Redirect_flow_0</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Redirect_Resolve" name="Resolver código corto">
+      <bpmn:incoming>Redirect_flow_0</bpmn:incoming>
+      <bpmn:outgoing>Redirect_flow_1</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Redirect_Found" name="¿Código existente?" default="Redirect_flow_3">
+      <bpmn:incoming>Redirect_flow_1</bpmn:incoming>
+      <bpmn:outgoing>Redirect_flow_2</bpmn:outgoing>
+      <bpmn:outgoing>Redirect_flow_3</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Redirect_Usable" name="¿Activo y no caducado?" default="Redirect_flow_6">
+      <bpmn:incoming>Redirect_flow_2</bpmn:incoming>
+      <bpmn:outgoing>Redirect_flow_5</bpmn:outgoing>
+      <bpmn:outgoing>Redirect_flow_6</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Redirect_Count" name="Intentar incrementar contador agregado">
+      <bpmn:incoming>Redirect_flow_5</bpmn:incoming>
+      <bpmn:outgoing>Redirect_flow_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Redirect_Redirect" name="Redirigir con 307 y Location">
+      <bpmn:incoming>Redirect_flow_8</bpmn:incoming>
+      <bpmn:outgoing>Redirect_flow_9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Redirect_End" name="Destino comunicado al navegador">
+      <bpmn:incoming>Redirect_flow_9</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Redirect_Missing" name="Devolver 404 heredado">
+      <bpmn:incoming>Redirect_flow_3</bpmn:incoming>
+      <bpmn:outgoing>Redirect_flow_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Redirect_Gone" name="Devolver 410 con envelope">
+      <bpmn:incoming>Redirect_flow_6</bpmn:incoming>
+      <bpmn:outgoing>Redirect_flow_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Redirect_ErrorEnd" name="Redirección rechazada">
+      <bpmn:incoming>Redirect_flow_4</bpmn:incoming>
+      <bpmn:incoming>Redirect_flow_7</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Redirect_flow_0" sourceRef="Redirect_Start" targetRef="Redirect_Resolve" />
+    <bpmn:sequenceFlow id="Redirect_flow_1" sourceRef="Redirect_Resolve" targetRef="Redirect_Found" />
+    <bpmn:sequenceFlow id="Redirect_flow_2" sourceRef="Redirect_Found" targetRef="Redirect_Usable" name="Sí" />
+    <bpmn:sequenceFlow id="Redirect_flow_3" sourceRef="Redirect_Found" targetRef="Redirect_Missing" name="Por defecto" />
+    <bpmn:sequenceFlow id="Redirect_flow_4" sourceRef="Redirect_Missing" targetRef="Redirect_ErrorEnd" />
+    <bpmn:sequenceFlow id="Redirect_flow_5" sourceRef="Redirect_Usable" targetRef="Redirect_Count" name="Sí" />
+    <bpmn:sequenceFlow id="Redirect_flow_6" sourceRef="Redirect_Usable" targetRef="Redirect_Gone" name="Por defecto" />
+    <bpmn:sequenceFlow id="Redirect_flow_7" sourceRef="Redirect_Gone" targetRef="Redirect_ErrorEnd" />
+    <bpmn:sequenceFlow id="Redirect_flow_8" sourceRef="Redirect_Count" targetRef="Redirect_Redirect" name="Contador de mejor esfuerzo" />
+    <bpmn:sequenceFlow id="Redirect_flow_9" sourceRef="Redirect_Redirect" targetRef="Redirect_End" />
+  </bpmn:process>
+  <bpmn:collaboration id="Collaboration_Admin">
+    <bpmn:participant id="Participant_Admin" name="Consultar y gestionar desde el panel administrativo" processRef="Process_Admin" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Admin" name="Consultar y gestionar desde el panel administrativo" isExecutable="false">
+    <bpmn:documentation>X-Admin-API-Key solo en cabecera. Estado/fecha no cambian el destino. Sin eliminación física. Logout cancela peticiones; cada operación exige autorización en servidor. Copiar/abrir/QR son acciones auxiliares descritas en el análisis.</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet_Admin">
+      <bpmn:lane id="Lane_Admin_user" name="Persona usuaria / administrador">
+        <bpmn:flowNodeRef>Admin_Start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Key</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_View</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Action</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Edit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Confirm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Logout</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_End</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Admin_api" name="Backend FastAPI y panel web">
+        <bpmn:flowNodeRef>Admin_Authenticate</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Authorized</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Query</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Patch</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Saved</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Error</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_ErrorKind</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_Denied</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Admin_DeniedEnd</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Admin_qr" name="Biblioteca QR local (mismo backend)" />
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Admin_Start" name="Necesidad de administrar enlaces">
+      <bpmn:outgoing>Admin_flow_0</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Admin_Key" name="Introducir clave provisional en memoria">
+      <bpmn:incoming>Admin_flow_0</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_1</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Admin_Authenticate" name="Validar clave en GET protegido del listado">
+      <bpmn:incoming>Admin_flow_1</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Admin_Authorized" name="¿Clave autorizada por el backend?" default="Admin_flow_4">
+      <bpmn:incoming>Admin_flow_2</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_3</bpmn:outgoing>
+      <bpmn:outgoing>Admin_flow_4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Admin_Query" name="Consultar resumen SQL y lista paginada">
+      <bpmn:incoming>Admin_flow_3</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_6</bpmn:outgoing>
+      <bpmn:incoming>Admin_flow_14</bpmn:incoming>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Admin_View" name="Consultar enlaces con búsqueda y filtros">
+      <bpmn:incoming>Admin_flow_6</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_7</bpmn:outgoing>
+      <bpmn:incoming>Admin_flow_12</bpmn:incoming>
+      <bpmn:incoming>Admin_flow_17</bpmn:incoming>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Admin_Action" name="¿Gestionar o cerrar sesión?" default="Admin_flow_9">
+      <bpmn:incoming>Admin_flow_7</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_8</bpmn:outgoing>
+      <bpmn:outgoing>Admin_flow_9</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Admin_Edit" name="Editar estado o caducidad">
+      <bpmn:incoming>Admin_flow_8</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_10</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Admin_Confirm" name="¿Confirmar cambios?" default="Admin_flow_12">
+      <bpmn:incoming>Admin_flow_10</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_11</bpmn:outgoing>
+      <bpmn:outgoing>Admin_flow_12</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Admin_Patch" name="Revalidar clave y aplicar PATCH validado">
+      <bpmn:incoming>Admin_flow_11</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_13</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Admin_Saved" name="¿Cambio confirmado?" default="Admin_flow_15">
+      <bpmn:incoming>Admin_flow_13</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_14</bpmn:outgoing>
+      <bpmn:outgoing>Admin_flow_15</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Admin_Error" name="Mostrar error sin revelar credenciales">
+      <bpmn:incoming>Admin_flow_15</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_16</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Admin_ErrorKind" name="¿Error de autenticación?" default="Admin_flow_17">
+      <bpmn:incoming>Admin_flow_16</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_17</bpmn:outgoing>
+      <bpmn:outgoing>Admin_flow_18</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Admin_Logout" name="Cerrar sesión y descartar clave local">
+      <bpmn:incoming>Admin_flow_9</bpmn:incoming>
+      <bpmn:incoming>Admin_flow_18</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_19</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="Admin_End" name="Sesión local terminada">
+      <bpmn:incoming>Admin_flow_19</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Admin_Denied" name="Mostrar 401, 403 o 503 y borrar clave">
+      <bpmn:incoming>Admin_flow_4</bpmn:incoming>
+      <bpmn:outgoing>Admin_flow_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Admin_DeniedEnd" name="Acceso rechazado">
+      <bpmn:incoming>Admin_flow_5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Admin_flow_0" sourceRef="Admin_Start" targetRef="Admin_Key" />
+    <bpmn:sequenceFlow id="Admin_flow_1" sourceRef="Admin_Key" targetRef="Admin_Authenticate" />
+    <bpmn:sequenceFlow id="Admin_flow_2" sourceRef="Admin_Authenticate" targetRef="Admin_Authorized" />
+    <bpmn:sequenceFlow id="Admin_flow_3" sourceRef="Admin_Authorized" targetRef="Admin_Query" name="Sí" />
+    <bpmn:sequenceFlow id="Admin_flow_4" sourceRef="Admin_Authorized" targetRef="Admin_Denied" name="Por defecto" />
+    <bpmn:sequenceFlow id="Admin_flow_5" sourceRef="Admin_Denied" targetRef="Admin_DeniedEnd" />
+    <bpmn:sequenceFlow id="Admin_flow_6" sourceRef="Admin_Query" targetRef="Admin_View" />
+    <bpmn:sequenceFlow id="Admin_flow_7" sourceRef="Admin_View" targetRef="Admin_Action" />
+    <bpmn:sequenceFlow id="Admin_flow_8" sourceRef="Admin_Action" targetRef="Admin_Edit" name="Gestionar" />
+    <bpmn:sequenceFlow id="Admin_flow_9" sourceRef="Admin_Action" targetRef="Admin_Logout" name="Por defecto" />
+    <bpmn:sequenceFlow id="Admin_flow_10" sourceRef="Admin_Edit" targetRef="Admin_Confirm" />
+    <bpmn:sequenceFlow id="Admin_flow_11" sourceRef="Admin_Confirm" targetRef="Admin_Patch" name="Confirmar" />
+    <bpmn:sequenceFlow id="Admin_flow_12" sourceRef="Admin_Confirm" targetRef="Admin_View" name="Por defecto" />
+    <bpmn:sequenceFlow id="Admin_flow_13" sourceRef="Admin_Patch" targetRef="Admin_Saved" />
+    <bpmn:sequenceFlow id="Admin_flow_14" sourceRef="Admin_Saved" targetRef="Admin_Query" name="Sí: refrescar" />
+    <bpmn:sequenceFlow id="Admin_flow_15" sourceRef="Admin_Saved" targetRef="Admin_Error" name="Por defecto" />
+    <bpmn:sequenceFlow id="Admin_flow_16" sourceRef="Admin_Error" targetRef="Admin_ErrorKind" />
+    <bpmn:sequenceFlow id="Admin_flow_17" sourceRef="Admin_ErrorKind" targetRef="Admin_View" name="Por defecto" />
+    <bpmn:sequenceFlow id="Admin_flow_18" sourceRef="Admin_ErrorKind" targetRef="Admin_Logout" name="401 / 403 / 503" />
+    <bpmn:sequenceFlow id="Admin_flow_19" sourceRef="Admin_Logout" targetRef="Admin_End" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Create">
+    <bpmndi:BPMNPlane id="Plane_Create" bpmnElement="Collaboration_Create">
+      <bpmndi:BPMNShape id="DI_Participant_Create" bpmnElement="Participant_Create">
+        <dc:Bounds x="0" y="20" width="1700" height="1520" />
       </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="Shape_Lane_User" bpmnElement="Lane_User" isHorizontal="true">
-        <dc:Bounds x="40" y="40" width="2200" height="140" />
+      <bpmndi:BPMNShape id="DI_Lane_Create_user" bpmnElement="Lane_Create_user">
+        <dc:Bounds x="40" y="20" width="320" height="1520" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Lane_API" bpmnElement="Lane_API" isHorizontal="true">
-        <dc:Bounds x="40" y="180" width="2200" height="250" />
+      <bpmndi:BPMNShape id="DI_Lane_Create_api" bpmnElement="Lane_Create_api">
+        <dc:Bounds x="360" y="20" width="1000" height="1520" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Lane_QR" bpmnElement="Lane_QR" isHorizontal="true">
-        <dc:Bounds x="40" y="430" width="2200" height="170" />
+      <bpmndi:BPMNShape id="DI_Lane_Create_qr" bpmnElement="Lane_Create_qr">
+        <dc:Bounds x="1360" y="20" width="340" height="1520" />
       </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="Shape_StartEvent_Need" bpmnElement="StartEvent_Need">
-        <dc:Bounds x="80" y="90" width="36" height="36" />
+      <bpmndi:BPMNShape id="DI_Create_Start" bpmnElement="Create_Start">
+        <dc:Bounds x="182.0" y="80" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_EnterURL" bpmnElement="Task_EnterURL">
-        <dc:Bounds x="180" y="75" width="120" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_Input" bpmnElement="Create_Input">
+        <dc:Bounds x="85.0" y="200" width="230" height="66" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_Validate" bpmnElement="Task_Validate">
-        <dc:Bounds x="330" y="240" width="120" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_Validate" bpmnElement="Create_Validate">
+        <dc:Bounds x="525.0" y="320" width="230" height="66" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Gateway_Valid" bpmnElement="Gateway_Valid" isMarkerVisible="true">
-        <dc:Bounds x="480" y="250" width="50" height="50" />
+      <bpmndi:BPMNShape id="DI_Create_Valid" bpmnElement="Create_Valid">
+        <dc:Bounds x="613.0" y="440" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="423.0" y="444" width="180" height="42" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_DomainRules" bpmnElement="Task_DomainRules">
-        <dc:Bounds x="560" y="240" width="120" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_Generate" bpmnElement="Create_Generate">
+        <dc:Bounds x="525.0" y="560" width="230" height="66" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_GenerateCode" bpmnElement="Task_GenerateCode">
-        <dc:Bounds x="710" y="240" width="120" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_Persist" bpmnElement="Create_Persist">
+        <dc:Bounds x="525.0" y="680" width="230" height="66" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Gateway_Collision" bpmnElement="Gateway_Collision" isMarkerVisible="true">
-        <dc:Bounds x="860" y="250" width="50" height="50" />
+      <bpmndi:BPMNShape id="DI_Create_Result" bpmnElement="Create_Result">
+        <dc:Bounds x="613.0" y="800" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="423.0" y="804" width="180" height="42" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_Persist" bpmnElement="Task_Persist">
-        <dc:Bounds x="940" y="240" width="120" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_Retry" bpmnElement="Create_Retry">
+        <dc:Bounds x="1073.0" y="920" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="883.0" y="924" width="180" height="42" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Gateway_Persistence" bpmnElement="Gateway_Persistence" isMarkerVisible="true">
-        <dc:Bounds x="1090" y="250" width="50" height="50" />
+      <bpmndi:BPMNShape id="DI_Create_Return" bpmnElement="Create_Return">
+        <dc:Bounds x="525.0" y="920" width="230" height="66" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_GenerateQR" bpmnElement="Task_GenerateQR">
-        <dc:Bounds x="1180" y="470" width="120" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_Display" bpmnElement="Create_Display">
+        <dc:Bounds x="85.0" y="1040" width="230" height="66" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_DeliverQR" bpmnElement="Task_DeliverQR">
-        <dc:Bounds x="1330" y="470" width="120" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_End" bpmnElement="Create_End">
+        <dc:Bounds x="182.0" y="1160" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_ReturnLink" bpmnElement="Task_ReturnLink">
-        <dc:Bounds x="1180" y="240" width="140" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_Invalid" bpmnElement="Create_Invalid">
+        <dc:Bounds x="985.0" y="560" width="230" height="66" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_ReceiveLink" bpmnElement="Task_ReceiveLink">
-        <dc:Bounds x="1500" y="75" width="130" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_InvalidEnd" bpmnElement="Create_InvalidEnd">
+        <dc:Bounds x="1082.0" y="680" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_UseLink" bpmnElement="Task_UseLink">
-        <dc:Bounds x="1680" y="75" width="130" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_Conflict" bpmnElement="Create_Conflict">
+        <dc:Bounds x="985.0" y="1040" width="230" height="66" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_ResolveCode" bpmnElement="Task_ResolveCode">
-        <dc:Bounds x="1500" y="240" width="120" height="70" />
+      <bpmndi:BPMNShape id="DI_Create_Failure" bpmnElement="Create_Failure">
+        <dc:Bounds x="985.0" y="1280" width="230" height="66" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Gateway_Usable" bpmnElement="Gateway_Usable" isMarkerVisible="true">
-        <dc:Bounds x="1680" y="250" width="50" height="50" />
+      <bpmndi:BPMNShape id="DI_Create_FailureEnd" bpmnElement="Create_FailureEnd">
+        <dc:Bounds x="1082.0" y="1400" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_RegisterClick" bpmnElement="Task_RegisterClick">
-        <dc:Bounds x="1760" y="240" width="130" height="70" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_Redirect" bpmnElement="Task_Redirect">
-        <dc:Bounds x="1940" y="240" width="120" height="70" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_EndEvent_Success" bpmnElement="EndEvent_Success">
-        <dc:Bounds x="2110" y="250" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_ReturnValidationError" bpmnElement="Task_ReturnValidationError">
-        <dc:Bounds x="480" y="350" width="140" height="70" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_EndEvent_Invalid" bpmnElement="EndEvent_Invalid">
-        <dc:Bounds x="660" y="370" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_ReturnPersistenceError" bpmnElement="Task_ReturnPersistenceError">
-        <dc:Bounds x="1060" y="350" width="150" height="70" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_EndEvent_Error" bpmnElement="EndEvent_Error">
-        <dc:Bounds x="1260" y="370" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_Task_ReturnGone" bpmnElement="Task_ReturnGone">
-        <dc:Bounds x="1660" y="350" width="130" height="70" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Shape_EndEvent_Gone" bpmnElement="EndEvent_Gone">
-        <dc:Bounds x="1840" y="370" width="36" height="36" />
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNEdge id="Edge_Flow_Start_Enter" bpmnElement="Flow_Start_Enter">
-        <di:waypoint x="116" y="108" />
-        <di:waypoint x="180" y="110" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_0" bpmnElement="Create_flow_0">
+        <di:waypoint x="200" y="116" />
+        <di:waypoint x="200" y="200" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Enter_Validate" bpmnElement="Flow_Enter_Validate">
-        <di:waypoint x="240" y="110" />
-        <di:waypoint x="390" y="275" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_1" bpmnElement="Create_flow_1">
+        <di:waypoint x="200" y="266" />
+        <di:waypoint x="200" y="293.0" />
+        <di:waypoint x="640" y="293.0" />
+        <di:waypoint x="640" y="320" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Validate_Gateway" bpmnElement="Flow_Validate_Gateway">
-        <di:waypoint x="450" y="275" />
-        <di:waypoint x="505" y="275" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_2" bpmnElement="Create_flow_2">
+        <di:waypoint x="640" y="386" />
+        <di:waypoint x="640" y="440" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Gateway_Valid" bpmnElement="Flow_Gateway_Valid">
-        <di:waypoint x="530" y="275" />
-        <di:waypoint x="560" y="275" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_3" bpmnElement="Create_flow_3">
+        <di:waypoint x="640" y="494" />
+        <di:waypoint x="640" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="652" y="515.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Gateway_Invalid" bpmnElement="Flow_Gateway_Invalid">
-        <di:waypoint x="505" y="300" />
-        <di:waypoint x="550" y="350" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_4" bpmnElement="Create_flow_4">
+        <di:waypoint x="640" y="494" />
+        <di:waypoint x="640" y="527.0" />
+        <di:waypoint x="1100" y="527.0" />
+        <di:waypoint x="1100" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="795.0" y="489.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Domain_Generate" bpmnElement="Flow_Domain_Generate">
-        <di:waypoint x="680" y="275" />
-        <di:waypoint x="710" y="275" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_5" bpmnElement="Create_flow_5">
+        <di:waypoint x="1100" y="626" />
+        <di:waypoint x="1100" y="680" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Generate_CollisionGateway" bpmnElement="Flow_Generate_CollisionGateway">
-        <di:waypoint x="830" y="275" />
-        <di:waypoint x="885" y="275" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_6" bpmnElement="Create_flow_6">
+        <di:waypoint x="640" y="626" />
+        <di:waypoint x="640" y="680" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Collision_Free" bpmnElement="Flow_Collision_Free">
-        <di:waypoint x="910" y="275" />
-        <di:waypoint x="940" y="275" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_7" bpmnElement="Create_flow_7">
+        <di:waypoint x="640" y="746" />
+        <di:waypoint x="640" y="800" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Collision_Retry" bpmnElement="Flow_Collision_Retry">
-        <di:waypoint x="885" y="250" />
-        <di:waypoint x="885" y="220" />
-        <di:waypoint x="770" y="220" />
-        <di:waypoint x="770" y="240" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_8" bpmnElement="Create_flow_8">
+        <di:waypoint x="640" y="854" />
+        <di:waypoint x="640" y="920" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="652" y="875.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Persist_Gateway" bpmnElement="Flow_Persist_Gateway">
-        <di:waypoint x="1060" y="275" />
-        <di:waypoint x="1115" y="275" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_9" bpmnElement="Create_flow_9">
+        <di:waypoint x="640" y="854" />
+        <di:waypoint x="640" y="887.0" />
+        <di:waypoint x="1100" y="887.0" />
+        <di:waypoint x="1100" y="920" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="795.0" y="849.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Persistence_Ok" bpmnElement="Flow_Persistence_Ok">
-        <di:waypoint x="1115" y="300" />
-        <di:waypoint x="1115" y="505" />
-        <di:waypoint x="1180" y="505" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_10" bpmnElement="Create_flow_10">
+        <di:waypoint x="667.0" y="827.0" />
+        <di:waypoint x="860" y="827.0" />
+        <di:waypoint x="860" y="1313.0" />
+        <di:waypoint x="985.0" y="1313.0" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="705" y="1040.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Persistence_Failed" bpmnElement="Flow_Persistence_Failed">
-        <di:waypoint x="1115" y="300" />
-        <di:waypoint x="1115" y="350" />
-        <di:waypoint x="1135" y="350" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_11" bpmnElement="Create_flow_11">
+        <di:waypoint x="1127.0" y="947.0" />
+        <di:waypoint x="1300" y="947.0" />
+        <di:waypoint x="1300" y="540" />
+        <di:waypoint x="640" y="540" />
+        <di:waypoint x="640" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1145" y="743.5" width="145" height="32" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_QR_Deliver" bpmnElement="Flow_QR_Deliver">
-        <di:waypoint x="1300" y="505" />
-        <di:waypoint x="1330" y="505" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_12" bpmnElement="Create_flow_12">
+        <di:waypoint x="1100" y="974" />
+        <di:waypoint x="1100" y="1040" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1112" y="995.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Deliver_ReturnLink" bpmnElement="Flow_Deliver_ReturnLink">
-        <di:waypoint x="1450" y="505" />
-        <di:waypoint x="1250" y="310" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_13" bpmnElement="Create_flow_13">
+        <di:waypoint x="1215.0" y="1073.0" />
+        <di:waypoint x="1300" y="1073.0" />
+        <di:waypoint x="1300" y="1418.0" />
+        <di:waypoint x="1118.0" y="1418.0" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Return_Receive" bpmnElement="Flow_Return_Receive">
-        <di:waypoint x="1320" y="275" />
-        <di:waypoint x="1450" y="275" />
-        <di:waypoint x="1450" y="110" />
-        <di:waypoint x="1500" y="110" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_14" bpmnElement="Create_flow_14">
+        <di:waypoint x="1100" y="1346" />
+        <di:waypoint x="1100" y="1400" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Receive_Use" bpmnElement="Flow_Receive_Use">
-        <di:waypoint x="1630" y="110" />
-        <di:waypoint x="1680" y="110" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_15" bpmnElement="Create_flow_15">
+        <di:waypoint x="640" y="986" />
+        <di:waypoint x="640" y="1013.0" />
+        <di:waypoint x="200" y="1013.0" />
+        <di:waypoint x="200" y="1040" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Use_Resolve" bpmnElement="Flow_Use_Resolve">
-        <di:waypoint x="1745" y="145" />
-        <di:waypoint x="1560" y="240" />
+      <bpmndi:BPMNEdge id="DI_Create_flow_16" bpmnElement="Create_flow_16">
+        <di:waypoint x="200" y="1106" />
+        <di:waypoint x="200" y="1160" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Resolve_UsableGateway" bpmnElement="Flow_Resolve_UsableGateway">
-        <di:waypoint x="1620" y="275" />
-        <di:waypoint x="1705" y="275" />
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_QR">
+    <bpmndi:BPMNPlane id="Plane_QR" bpmnElement="Collaboration_QR">
+      <bpmndi:BPMNShape id="DI_Participant_QR" bpmnElement="Participant_QR">
+        <dc:Bounds x="0" y="20" width="1700" height="920" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Lane_QR_user" bpmnElement="Lane_QR_user">
+        <dc:Bounds x="40" y="20" width="320" height="920" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Lane_QR_api" bpmnElement="Lane_QR_api">
+        <dc:Bounds x="360" y="20" width="1000" height="920" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Lane_QR_qr" bpmnElement="Lane_QR_qr">
+        <dc:Bounds x="1360" y="20" width="340" height="920" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_QR_Start" bpmnElement="QR_Start">
+        <dc:Bounds x="182.0" y="80" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_QR_Request" bpmnElement="QR_Request">
+        <dc:Bounds x="85.0" y="200" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_QR_Resolve" bpmnElement="QR_Resolve">
+        <dc:Bounds x="525.0" y="320" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_QR_Usable" bpmnElement="QR_Usable">
+        <dc:Bounds x="613.0" y="440" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="423.0" y="444" width="180" height="42" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_QR_Generate" bpmnElement="QR_Generate">
+        <dc:Bounds x="1405.0" y="560" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_QR_Deliver" bpmnElement="QR_Deliver">
+        <dc:Bounds x="525.0" y="680" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_QR_End" bpmnElement="QR_End">
+        <dc:Bounds x="182.0" y="800" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_QR_Error" bpmnElement="QR_Error">
+        <dc:Bounds x="985.0" y="560" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_QR_ErrorEnd" bpmnElement="QR_ErrorEnd">
+        <dc:Bounds x="1082.0" y="680" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DI_QR_flow_0" bpmnElement="QR_flow_0">
+        <di:waypoint x="200" y="116" />
+        <di:waypoint x="200" y="200" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Usable_Yes" bpmnElement="Flow_Usable_Yes">
-        <di:waypoint x="1730" y="275" />
-        <di:waypoint x="1760" y="275" />
+      <bpmndi:BPMNEdge id="DI_QR_flow_1" bpmnElement="QR_flow_1">
+        <di:waypoint x="200" y="266" />
+        <di:waypoint x="200" y="293.0" />
+        <di:waypoint x="640" y="293.0" />
+        <di:waypoint x="640" y="320" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Usable_No" bpmnElement="Flow_Usable_No">
-        <di:waypoint x="1705" y="300" />
-        <di:waypoint x="1705" y="350" />
-        <di:waypoint x="1725" y="350" />
+      <bpmndi:BPMNEdge id="DI_QR_flow_2" bpmnElement="QR_flow_2">
+        <di:waypoint x="640" y="386" />
+        <di:waypoint x="640" y="440" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Register_Redirect" bpmnElement="Flow_Register_Redirect">
-        <di:waypoint x="1890" y="275" />
-        <di:waypoint x="1940" y="275" />
+      <bpmndi:BPMNEdge id="DI_QR_flow_3" bpmnElement="QR_flow_3">
+        <di:waypoint x="640" y="494" />
+        <di:waypoint x="640" y="527.0" />
+        <di:waypoint x="1520" y="527.0" />
+        <di:waypoint x="1520" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1005.0" y="489.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Redirect_End" bpmnElement="Flow_Redirect_End">
-        <di:waypoint x="2060" y="275" />
-        <di:waypoint x="2128" y="268" />
+      <bpmndi:BPMNEdge id="DI_QR_flow_4" bpmnElement="QR_flow_4">
+        <di:waypoint x="640" y="494" />
+        <di:waypoint x="640" y="527.0" />
+        <di:waypoint x="1100" y="527.0" />
+        <di:waypoint x="1100" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="795.0" y="489.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Invalid_End" bpmnElement="Flow_Invalid_End">
-        <di:waypoint x="620" y="385" />
-        <di:waypoint x="678" y="388" />
+      <bpmndi:BPMNEdge id="DI_QR_flow_5" bpmnElement="QR_flow_5">
+        <di:waypoint x="1520" y="626" />
+        <di:waypoint x="1520" y="653.0" />
+        <di:waypoint x="640" y="653.0" />
+        <di:waypoint x="640" y="680" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_PersistenceError_End" bpmnElement="Flow_PersistenceError_End">
-        <di:waypoint x="1210" y="385" />
-        <di:waypoint x="1278" y="388" />
+      <bpmndi:BPMNEdge id="DI_QR_flow_6" bpmnElement="QR_flow_6">
+        <di:waypoint x="640" y="746" />
+        <di:waypoint x="640" y="773.0" />
+        <di:waypoint x="200" y="773.0" />
+        <di:waypoint x="200" y="800" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Edge_Flow_Gone_End" bpmnElement="Flow_Gone_End">
-        <di:waypoint x="1790" y="385" />
-        <di:waypoint x="1858" y="388" />
+      <bpmndi:BPMNEdge id="DI_QR_flow_7" bpmnElement="QR_flow_7">
+        <di:waypoint x="1100" y="626" />
+        <di:waypoint x="1100" y="680" />
       </bpmndi:BPMNEdge>
-
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_Redirect">
+    <bpmndi:BPMNPlane id="Plane_Redirect" bpmnElement="Collaboration_Redirect">
+      <bpmndi:BPMNShape id="DI_Participant_Redirect" bpmnElement="Participant_Redirect">
+        <dc:Bounds x="0" y="20" width="1700" height="920" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Lane_Redirect_user" bpmnElement="Lane_Redirect_user">
+        <dc:Bounds x="40" y="20" width="320" height="920" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Lane_Redirect_api" bpmnElement="Lane_Redirect_api">
+        <dc:Bounds x="360" y="20" width="1000" height="920" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Lane_Redirect_qr" bpmnElement="Lane_Redirect_qr">
+        <dc:Bounds x="1360" y="20" width="340" height="920" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_Start" bpmnElement="Redirect_Start">
+        <dc:Bounds x="182.0" y="80" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_Resolve" bpmnElement="Redirect_Resolve">
+        <dc:Bounds x="525.0" y="200" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_Found" bpmnElement="Redirect_Found">
+        <dc:Bounds x="613.0" y="320" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="423.0" y="324" width="180" height="42" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_Usable" bpmnElement="Redirect_Usable">
+        <dc:Bounds x="613.0" y="440" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="423.0" y="444" width="180" height="42" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_Count" bpmnElement="Redirect_Count">
+        <dc:Bounds x="525.0" y="560" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_Redirect" bpmnElement="Redirect_Redirect">
+        <dc:Bounds x="525.0" y="680" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_End" bpmnElement="Redirect_End">
+        <dc:Bounds x="182.0" y="800" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_Missing" bpmnElement="Redirect_Missing">
+        <dc:Bounds x="985.0" y="440" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_Gone" bpmnElement="Redirect_Gone">
+        <dc:Bounds x="985.0" y="560" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Redirect_ErrorEnd" bpmnElement="Redirect_ErrorEnd">
+        <dc:Bounds x="1082.0" y="800" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_0" bpmnElement="Redirect_flow_0">
+        <di:waypoint x="200" y="116" />
+        <di:waypoint x="200" y="158.0" />
+        <di:waypoint x="640" y="158.0" />
+        <di:waypoint x="640" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_1" bpmnElement="Redirect_flow_1">
+        <di:waypoint x="640" y="266" />
+        <di:waypoint x="640" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_2" bpmnElement="Redirect_flow_2">
+        <di:waypoint x="640" y="374" />
+        <di:waypoint x="640" y="440" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="652" y="395.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_3" bpmnElement="Redirect_flow_3">
+        <di:waypoint x="640" y="374" />
+        <di:waypoint x="640" y="407.0" />
+        <di:waypoint x="1100" y="407.0" />
+        <di:waypoint x="1100" y="440" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="795.0" y="369.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_4" bpmnElement="Redirect_flow_4">
+        <di:waypoint x="1215.0" y="473.0" />
+        <di:waypoint x="1300" y="473.0" />
+        <di:waypoint x="1300" y="818.0" />
+        <di:waypoint x="1118.0" y="818.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_5" bpmnElement="Redirect_flow_5">
+        <di:waypoint x="640" y="494" />
+        <di:waypoint x="640" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="652" y="515.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_6" bpmnElement="Redirect_flow_6">
+        <di:waypoint x="640" y="494" />
+        <di:waypoint x="640" y="527.0" />
+        <di:waypoint x="1100" y="527.0" />
+        <di:waypoint x="1100" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="795.0" y="489.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_7" bpmnElement="Redirect_flow_7">
+        <di:waypoint x="1215.0" y="593.0" />
+        <di:waypoint x="1300" y="593.0" />
+        <di:waypoint x="1300" y="818.0" />
+        <di:waypoint x="1118.0" y="818.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_8" bpmnElement="Redirect_flow_8">
+        <di:waypoint x="640" y="626" />
+        <di:waypoint x="640" y="680" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="652" y="641.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Redirect_flow_9" bpmnElement="Redirect_flow_9">
+        <di:waypoint x="640" y="746" />
+        <di:waypoint x="640" y="773.0" />
+        <di:waypoint x="200" y="773.0" />
+        <di:waypoint x="200" y="800" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_Admin">
+    <bpmndi:BPMNPlane id="Plane_Admin" bpmnElement="Collaboration_Admin">
+      <bpmndi:BPMNShape id="DI_Participant_Admin" bpmnElement="Participant_Admin">
+        <dc:Bounds x="0" y="20" width="1700" height="1760" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Lane_Admin_user" bpmnElement="Lane_Admin_user">
+        <dc:Bounds x="40" y="20" width="320" height="1760" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Lane_Admin_api" bpmnElement="Lane_Admin_api">
+        <dc:Bounds x="360" y="20" width="1000" height="1760" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Lane_Admin_qr" bpmnElement="Lane_Admin_qr">
+        <dc:Bounds x="1360" y="20" width="340" height="1760" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Start" bpmnElement="Admin_Start">
+        <dc:Bounds x="182.0" y="80" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Key" bpmnElement="Admin_Key">
+        <dc:Bounds x="85.0" y="200" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Authenticate" bpmnElement="Admin_Authenticate">
+        <dc:Bounds x="525.0" y="320" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Authorized" bpmnElement="Admin_Authorized">
+        <dc:Bounds x="613.0" y="440" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="423.0" y="444" width="180" height="42" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Query" bpmnElement="Admin_Query">
+        <dc:Bounds x="525.0" y="560" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_View" bpmnElement="Admin_View">
+        <dc:Bounds x="85.0" y="680" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Action" bpmnElement="Admin_Action">
+        <dc:Bounds x="173.0" y="800" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="237.0" y="752" width="110" height="42" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Edit" bpmnElement="Admin_Edit">
+        <dc:Bounds x="85.0" y="920" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Confirm" bpmnElement="Admin_Confirm">
+        <dc:Bounds x="173.0" y="1040" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="237.0" y="992" width="110" height="42" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Patch" bpmnElement="Admin_Patch">
+        <dc:Bounds x="525.0" y="1160" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Saved" bpmnElement="Admin_Saved">
+        <dc:Bounds x="613.0" y="1280" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="423.0" y="1284" width="180" height="42" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Error" bpmnElement="Admin_Error">
+        <dc:Bounds x="985.0" y="1400" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_ErrorKind" bpmnElement="Admin_ErrorKind">
+        <dc:Bounds x="1073.0" y="1520" width="54" height="54" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="883.0" y="1524" width="180" height="42" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Logout" bpmnElement="Admin_Logout">
+        <dc:Bounds x="85.0" y="1520" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_End" bpmnElement="Admin_End">
+        <dc:Bounds x="182.0" y="1640" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_Denied" bpmnElement="Admin_Denied">
+        <dc:Bounds x="985.0" y="560" width="230" height="66" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Admin_DeniedEnd" bpmnElement="Admin_DeniedEnd">
+        <dc:Bounds x="1082.0" y="680" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_0" bpmnElement="Admin_flow_0">
+        <di:waypoint x="200" y="116" />
+        <di:waypoint x="200" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_1" bpmnElement="Admin_flow_1">
+        <di:waypoint x="200" y="266" />
+        <di:waypoint x="200" y="293.0" />
+        <di:waypoint x="640" y="293.0" />
+        <di:waypoint x="640" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_2" bpmnElement="Admin_flow_2">
+        <di:waypoint x="640" y="386" />
+        <di:waypoint x="640" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_3" bpmnElement="Admin_flow_3">
+        <di:waypoint x="640" y="494" />
+        <di:waypoint x="640" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="652" y="515.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_4" bpmnElement="Admin_flow_4">
+        <di:waypoint x="640" y="494" />
+        <di:waypoint x="640" y="527.0" />
+        <di:waypoint x="1100" y="527.0" />
+        <di:waypoint x="1100" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="795.0" y="489.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_5" bpmnElement="Admin_flow_5">
+        <di:waypoint x="1100" y="626" />
+        <di:waypoint x="1100" y="680" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_6" bpmnElement="Admin_flow_6">
+        <di:waypoint x="640" y="626" />
+        <di:waypoint x="640" y="653.0" />
+        <di:waypoint x="200" y="653.0" />
+        <di:waypoint x="200" y="680" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_7" bpmnElement="Admin_flow_7">
+        <di:waypoint x="200" y="746" />
+        <di:waypoint x="200" y="800" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_8" bpmnElement="Admin_flow_8">
+        <di:waypoint x="200" y="854" />
+        <di:waypoint x="200" y="920" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="212" y="875.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_9" bpmnElement="Admin_flow_9">
+        <di:waypoint x="227.0" y="827.0" />
+        <di:waypoint x="1300" y="827.0" />
+        <di:waypoint x="1300" y="1553.0" />
+        <di:waypoint x="315.0" y="1553.0" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1145" y="1160.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_10" bpmnElement="Admin_flow_10">
+        <di:waypoint x="200" y="986" />
+        <di:waypoint x="200" y="1040" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_11" bpmnElement="Admin_flow_11">
+        <di:waypoint x="200" y="1094" />
+        <di:waypoint x="200" y="1127.0" />
+        <di:waypoint x="640" y="1127.0" />
+        <di:waypoint x="640" y="1160" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="345.0" y="1089.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_12" bpmnElement="Admin_flow_12">
+        <di:waypoint x="227.0" y="1067.0" />
+        <di:waypoint x="1300" y="1067.0" />
+        <di:waypoint x="1300" y="660" />
+        <di:waypoint x="200" y="660" />
+        <di:waypoint x="200" y="680" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1145" y="863.5" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_13" bpmnElement="Admin_flow_13">
+        <di:waypoint x="640" y="1226" />
+        <di:waypoint x="640" y="1280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_14" bpmnElement="Admin_flow_14">
+        <di:waypoint x="667.0" y="1307.0" />
+        <di:waypoint x="1300" y="1307.0" />
+        <di:waypoint x="1300" y="540" />
+        <di:waypoint x="640" y="540" />
+        <di:waypoint x="640" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1145" y="923.5" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_15" bpmnElement="Admin_flow_15">
+        <di:waypoint x="640" y="1334" />
+        <di:waypoint x="640" y="1367.0" />
+        <di:waypoint x="1100" y="1367.0" />
+        <di:waypoint x="1100" y="1400" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="795.0" y="1329.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_16" bpmnElement="Admin_flow_16">
+        <di:waypoint x="1100" y="1466" />
+        <di:waypoint x="1100" y="1520" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_17" bpmnElement="Admin_flow_17">
+        <di:waypoint x="1127.0" y="1547.0" />
+        <di:waypoint x="1300" y="1547.0" />
+        <di:waypoint x="1300" y="660" />
+        <di:waypoint x="200" y="660" />
+        <di:waypoint x="200" y="680" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1145" y="1103.5" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_18" bpmnElement="Admin_flow_18">
+        <di:waypoint x="1100" y="1574" />
+        <di:waypoint x="1100" y="1547.0" />
+        <di:waypoint x="200" y="1547.0" />
+        <di:waypoint x="200" y="1520" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="575.0" y="1509.0" width="145" height="32" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_Admin_flow_19" bpmnElement="Admin_flow_19">
+        <di:waypoint x="200" y="1586" />
+        <di:waypoint x="200" y="1640" />
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>

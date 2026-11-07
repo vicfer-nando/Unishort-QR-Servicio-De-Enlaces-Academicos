@@ -25,6 +25,13 @@ def test_empty_admin_key_means_not_configured(monkeypatch):
     assert Settings().admin_api_key is None
 
 
+def test_settings_representation_never_exposes_admin_key():
+    settings = Settings(admin_api_key="audit-sentinel-never-log", _env_file=None)
+    assert settings.admin_api_key == "audit-sentinel-never-log"
+    assert "audit-sentinel-never-log" not in repr(settings)
+    assert "audit-sentinel-never-log" not in str(settings)
+
+
 def test_cached_settings_can_be_refreshed(monkeypatch):
     monkeypatch.setenv("UNISHORT_RATE_LIMIT_MAX", "7")
     get_settings.cache_clear()

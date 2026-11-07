@@ -1,5 +1,32 @@
 # Funcionalidades de UniShort QR
 
+## Inventario vigente — 2026-11-06
+
+La implementación actual está en backend/app, frontend/index.html y
+frontend/admin.html. Esta sección reemplaza el estado de octubre para la entrega;
+el inventario anterior se conserva abajo como evidencia histórica.
+
+| ID | Capacidad real | Implementación y prueba | Estado |
+|---|---|---|---|
+| F01 | Crear enlaces nuevos, únicos y persistentes | POST /api/v1/links; tests/contract/test_v1_links_contract.py | Cumplido y verificado |
+| F02 | Redirigir con 307, validar estado y contar visitas | GET /s/{code}; contrato e integración admin | Cumplido y verificado |
+| F03 | Generar PNG bajo demanda y descargar QR | qr.py, endpoint QR, test_qr.py, verify_frontend.mjs | Cumplido en HTTP/JS; visual pendiente |
+| F04 | Validar URL, credenciales, longitud y colisiones | domain.py; tests/unit/test_domain.py, test_repository.py | Cumplido y verificado |
+| F05 | Desactivar, reactivar y cambiar/quitar caducidad | PATCH protegido, admin.mjs; test_v1_admin.py, admin.test.mjs | Cumplido y verificado |
+| F06 | Contar visitas y obtener resumen global SQL | GET /admin/stats y /links/{code}/stats; test_admin_queries.py | Cumplido y verificado |
+| F07 | Autorizar administración con clave provisional | require_admin; tests/security y admin.test.mjs | Cumplido para clave compartida; sin roles institucionales |
+| F08 | Envelope v1, errores localizados y logs seguros | api/envelope.py, main.py, logging_config.py; contrato/seguridad | Cumplido y verificado |
+| F09 | Comprobar servicio y base | GET /health; test_basic.py, test_v1_admin.py | Cumplido y verificado |
+| F10 | Panel, búsqueda, filtros y paginación | admin.html/admin.mjs, GET /links; tests/integration/test_admin_dashboard.py | Cumplido en HTTP/JS; visual pendiente |
+
+Contratos: specs/001-create-short-link/contracts/v1-links.md,
+specs/002-generate-qr/contracts/qr.md y specs/003-admin-dashboard/contracts/admin.md.
+La API heredada conserva 200, deduplicación y respuesta plana; las integraciones
+nuevas usan v1 (201 y sin deduplicación). No se presenta identidad OIDC ni PostgreSQL
+como implementados. La matriz de auditoría final registra verificaciones y límites.
+
+## Archivo histórico — estado del MVP de octubre, no vigente
+
 **Fecha de actualización:** 2026-10-26  
 **Tipo de documento:** inventario funcional para planificación y exposición.  
 **Alcance:** consolida las features F01–F09 y contrasta cada una con el código,

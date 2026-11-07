@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     database_url: str = Field(default_factory=_default_database_url)
     base_url: str = "http://localhost:8000"
-    admin_api_key: Optional[str] = None
+    admin_api_key: Optional[str] = Field(default=None, repr=False)
     log_level: str = "INFO"
     cors_origins: str = "*"
     rate_limit_enabled: bool = True
